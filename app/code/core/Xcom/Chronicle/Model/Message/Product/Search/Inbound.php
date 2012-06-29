@@ -50,10 +50,10 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
         if (!isset($data)) {
             $data = array();
         }
-        if(!isset($data['locales'])){
+        if ( !isset( $data['locales'] ) ) {
             $data['locales'] = null;
         }
-        if(!isset($data['query'])){
+        if ( !isset( $data['query'] ) ) {
             $data['query'] = null;
         }
         try {
@@ -64,24 +64,21 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
                         'locales' => $data['locales'],
                         'query' => $data['query'],
                         'destination_id' => $this->getPublisherPseudonym(),
+                        'correlation_id' => $this->getCorrelationId(),
                     );
 
                     Mage::helper('xcom_xfabric')->send('com.x.pim.v1/ProductSearch/SearchProductSucceeded', $response);
             }
-        }
-        catch(Xcom_Xfabric_Exception $ex) {
+        } catch(Xcom_Xfabric_Exception $ex) {
             Mage::logException($ex);
-            $errorResponse = $this->_generate_failure_data($data['query'],$data['locales'],$ex,$ex->getCode());
+            $errorResponse = $this->_generateFailureData($data['query'],$data['locales'],$ex,$ex->getCode());
             Mage::helper('xcom_xfabric')->send('com.x.pim.v1/ProductSearch/SearchProductFailed',$errorResponse);
-            Mage::helper("Sent failure");
-
-        }
-        catch(Exception $ex){
+        } catch(Exception $ex){
             Mage::logException($ex);
             if(!is_null($ex)){
                 $message = $ex->getMessage();
             }
-            $errorResponse = $this->_generate_failure_data($data['query'],$data['locales'],$ex);
+            $errorResponse = $this->_generateFailureData($data['query'],$data['locales'],$ex);
             Mage::helper('xcom_xfabric')->send('com.x.pim.v1/ProductSearch/SearchProductFailed', $errorResponse);
         }
         return $this;
@@ -96,7 +93,7 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
     protected function _processSearchQuery(&$data)
     {
         $products = Mage::getResourceModel('catalog/product_collection');
-            $products->setOrder('created_at', 'asc');
+        $products->setOrder('created_at', 'asc');
         $count = 0;
         if (isset($data['query'])) {
             $query = $data['query'];
@@ -114,21 +111,19 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
                 $query['startItemIndex'] = (int)$temp;
                 $offset = $query['startItemIndex'];
             }
-            if(isset($query['fields'])){
+            if (isset($query['fields'])) {
                 Mage::throwException('Unsupported query parameter: fields');
             }
-            if(isset($query['predicates'])){
+            if (isset($query['predicates'])){
                 Mage::throwException('Unsupported query parameter: predicates');
             }
-            if(isset($query['ordering'])){
+            if (isset($query['ordering'])) {
                 Mage::throwException('Unsupported query parameter: ordering');
             }
 
             $count = $products->getSize();
 
             $products->getSelect()->limit($limit,$offset);
-
-            //$data['query'] = $query;
         }
         else{
             $data['query'] = array(
@@ -154,19 +149,20 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
         return $results;
     }
 
-    protected function _generate_failure_data($query,$locale,$ex,$code=null)
+    protected function _generateFailureData($query, $locale, $ex, $code=null)
     {
         $errorResponse = array(
             'query' => $query,
             'locales' => $locale,
             'errors' => array(
                 array(
-                    'code' => empty($code) ? '-1': ''.$code,
+                    'code' => empty($code) ? '-1': '' . $code,
                     'message' => $ex->getMessage(),
-                    'parameters' => null
+                    'parameters' => null,
                 )
             ),
             'destination_id' => $this->getPublisherPseudonym(),
+            'correlation_id' => $this->getCorrelationId(),
         );
         return $errorResponse;
     }

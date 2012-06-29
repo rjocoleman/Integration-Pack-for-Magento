@@ -44,7 +44,14 @@ class Xcom_Chronicle_Model_Message_Inventory_Stock_Get_Success extends Xcom_Xfab
      */
     public function _prepareData(Varien_Object $dataObject = null)
     {
-        $this->setMessageData($dataObject->getData());
+        $data = $dataObject->getData();
+        $this->addHeader(
+            Xcom_Xfabric_Model_Message_Abstract::CORRELATION_ID_HEADER,
+            $data['correlation_id']
+        );
+        unset($data['correlation_id']);
+        unset($data['destination_id']);
+        $this->setMessageData($data);
         return parent::_prepareData($dataObject);
     }
 

@@ -54,6 +54,21 @@ class Xcom_Mapping_Model_Resource_Attribute_Value extends Xcom_Mapping_Model_Res
     }
 
     /**
+     * Get data by mapping_attribute_id value from main table
+     *
+     * @param $mappingAttributeId
+     * @return string
+     */
+    public function getByAttributeId($mappingAttributeId)
+    {
+        $adapter = $this->_getReadAdapter();
+        $select = $adapter->select();
+        $select->from($this->getMainTable())
+               ->where('mapping_attribute_id = ?', (int)$mappingAttributeId);
+        return $adapter->fetchRow($select);
+    }
+
+    /**
      * @param Mage_Core_Model_Abstract $object
      * @return Mage_Core_Model_Mysql4_Abstract
      */

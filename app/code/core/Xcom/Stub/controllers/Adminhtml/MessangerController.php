@@ -194,5 +194,16 @@ class Xcom_Stub_Adminhtml_MessangerController extends Mage_Adminhtml_Controller_
         var_dump($message->getBody());
         die();
     }
+
+    public function tansactionAction()
+    {
+        $name = 'transaction';
+        $messageData = array();
+        $options = array('message_data' => $messageData);
+
+        Mage::getModel('xcom_choreography/transaction')
+            ->getTransaction($name, $options)
+            ->execute();
+    }
 }
 

@@ -73,4 +73,15 @@ class Xcom_Mapping_Model_Attribute_Value extends Mage_Core_Model_Abstract
         $this->_getResource()->deleteByIds($ids);
         return $this;
     }
+
+    /**
+     * Retrieve data values by attribute id
+     *
+     * @param $attributeId
+     * @return mixed
+     */
+    public function getByAttributeId($attributeId)
+    {
+        return $this->_getResource()->getByAttributeId($attributeId);
+    }
 }

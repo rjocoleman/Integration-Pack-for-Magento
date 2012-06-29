@@ -32,6 +32,7 @@
             <codePool>core</codePool>
             <depends>
                 <Mage_Catalog />
+                <Xcom_Xfabric />
             </depends>
         </Xcom_Mapping>
     </modules>

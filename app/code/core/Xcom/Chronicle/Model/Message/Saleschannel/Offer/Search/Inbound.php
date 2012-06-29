@@ -59,6 +59,7 @@ class Xcom_Chronicle_Model_Message_Saleschannel_Offer_Search_Inbound extends Xco
                     'offers' => $results,
                     'query' => $data['query'],
                     'destination_id' => $this->getPublisherPseudonym(),
+                    'correlation_id' => $this->getCorrelationId(),
                 );
                 Mage::helper('xcom_xfabric')->send('salesChannel/offer/searchSucceeded', $response);
             }
@@ -173,6 +174,7 @@ class Xcom_Chronicle_Model_Message_Saleschannel_Offer_Search_Inbound extends Xco
                 )
             ),
             'destination_id' => $this->getPublisherPseudonym(),
+            'correlation_id' => $this->getCorrelationId(),
         );
         return $errorResponse;
     }

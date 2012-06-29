@@ -29,10 +29,10 @@ class Xcom_Chronicle_Model_Message_Order_Shipped_Outbound extends Xcom_Xfabric_M
     protected function _construct()
     {
         parent::_construct();
-        $this->_topic = 'order/shipment/shipped';
-        $this->_schemaRecordName = 'OrderShipmentShipped';
-        $this->_schemaFile = 'Xcom_Chronicle/OrderManagement.avpr';
-        $this->_schemaVersion  = "2.0.0";
+        $this->_topic = 'com.x.ordermanagement.v2/ProcessSalesChannelOrder/OrderShipped';
+        $this->_schemaRecordName = 'OrderShipped';
+        $this->_schemaFile = 'Xcom_Chronicle/com.x.ordermanagement.v2.avpr';
+        $this->_schemaVersion  = "2.2.8";
     }
 
     /**

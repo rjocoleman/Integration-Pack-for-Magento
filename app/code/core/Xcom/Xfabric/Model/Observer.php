@@ -26,6 +26,7 @@
 
 class Xcom_Xfabric_Model_Observer
 {
+    const AVRO_BINARY_SIZE_THRESHOLD = 2097152; // 2 MB
     /**
      * Default page size for response collection.
      */
@@ -60,18 +61,26 @@ class Xcom_Xfabric_Model_Observer
             ->setOrder('created_at', Varien_Data_Collection::SORT_ORDER_DESC)
             ->addFieldToFilter('is_processed', 0);
 
-        for ($i = 1; $i <= $collection->getLastPageNumber(); $i++ ) {
+        for ($i = 1; $i <= $collection->getLastPageNumber(); $i++) {
             $collection->setCurPage($i)
                 ->addLimitPage()
                 ->clear();
 
             foreach ($collection as $response) {
                 try {
+                    $headers = unserialize($response->getData('headers'));
+                    if (!isset($headers['Content-Length']) || $headers['Content-Length'] > self::AVRO_BINARY_SIZE_THRESHOLD) {
+                        // 'Content-Length' header is over threshold or not present (streaming)
+                        // So we must increase memory limit for processing of message
+                        ini_set('memory_limit', '1024M');
+                    }
+                    $body = unserialize($response->getData('body'));
+
                     $messageOptions = array(
-                        'body' => unserialize($response->getData('body')),
-                        'headers' => unserialize($response->getData('headers')),
+                        'body' => $body,
+                        'headers' => $headers,
                         'topic' => $response->getData('topic'),
-                        'message_data' => unserialize($response->getData('body'))
+                        'message_data' => $body
                     );
                     $message = Mage::getModel('xcom_xfabric/message', $messageOptions);
                     /*topic related event*/
@@ -87,8 +96,8 @@ class Xcom_Xfabric_Model_Observer
                     if ($inboundMessage->isProcessLater()) {
                         $inboundMessage->addData($response->getData());
 
-                        $inboundMessage->setHeaders(unserialize($response->getData('headers')));
-                        $inboundMessage->setBody(unserialize($response->getData('body')));
+                        $inboundMessage->setHeaders($headers);
+                        $inboundMessage->setBody($body);
 
                         $inboundMessage->process();
                         $inboundMessage->save();

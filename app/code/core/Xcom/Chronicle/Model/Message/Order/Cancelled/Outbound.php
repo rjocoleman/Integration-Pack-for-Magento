@@ -29,10 +29,9 @@ class Xcom_Chronicle_Model_Message_Order_Cancelled_Outbound extends Xcom_Xfabric
     protected function _construct()
     {
         parent::_construct();
-        $this->_topic = 'order/cancelled';
+        $this->_topic = 'com.x.ordermanagement.v2/ProcessSalesChannelOrder/OrderCancelled';
         $this->_schemaRecordName = 'OrderCancelled';
-        $this->_schemaFile = 'Xcom_Chronicle/OrderManagement.avpr';
-        $this->_schemaVersion  = "3.0.0";
+        $this->_schemaVersion  = "2.2.8";
     }
 
     /**
@@ -41,12 +40,12 @@ class Xcom_Chronicle_Model_Message_Order_Cancelled_Outbound extends Xcom_Xfabric
      */
     public function _prepareData(Varien_Object $dataObject = null)
     {
-        $avroDataObject = Mage::getModel('xcom_chronicle/message_order', $dataObject->getOrder());
+        $avroDataObject = Mage::getModel('xcom_chronicle/message_order',
+            array('order' => $dataObject->getOrder(), 'type' => 'simple'));
         $data = array(
-            'order' => $avroDataObject->toArray()
+            'cancelledOrders' => array($avroDataObject->toArray())
         );
         $this->setMessageData($data);
         return parent::_prepareData($dataObject);
     }
-
 }

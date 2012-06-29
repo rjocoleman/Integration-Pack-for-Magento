@@ -31,6 +31,7 @@
             <active>true</active>
             <codePool>core</codePool>
             <depends>
+                <Mage_CatalogInventory/> <!--ensure observer returning items to stock on creditmemo runs before ours-->
                 <Xcom_Xfabric />
             </depends>
         </Xcom_Chronicle>

@@ -29,9 +29,9 @@ class Xcom_Chronicle_Model_Message_Customer_Updated_Outbound extends Xcom_Xfabri
     protected function _construct()
     {
         parent::_construct();
-        $this->_topic = 'customer/updated';
+        $this->_topic = 'com.x.customer.v1/CustomerUpsert/CustomerUpdated';
         $this->_schemaRecordName = 'CustomerUpdated';
-        $this->_schemaFile = 'Xcom_Chronicle/Customer.avpr';
+        $this->_schemaVersion = "1.1.1";
     }
 
     /**
@@ -42,7 +42,7 @@ class Xcom_Chronicle_Model_Message_Customer_Updated_Outbound extends Xcom_Xfabri
     {
         $avroDataObject = Mage::getModel('xcom_chronicle/message_customer', $dataObject->getCustomer());
         $data = array(
-            'customer' => $avroDataObject->toArray(),
+            'data' => $avroDataObject->toArray(),
         );
         $this->setMessageData($data);
         return parent::_prepareData($dataObject);

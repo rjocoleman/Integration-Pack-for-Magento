@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Product_Created_Outbound extends Xcom_Xfabric
         $this->_topic = 'com.x.pim.v1/ProductCreation/ProductCreated';
         $this->_schemaRecordName = 'ProductCreated';
         $this->_schemaFile = 'Xcom_Chronicle/ProductInformationManagementCapability.avpr';
-        $this->_schemaVersion = '1.0.0';
+        $this->_schemaVersion = '1.1.0';
     }
 
     /**

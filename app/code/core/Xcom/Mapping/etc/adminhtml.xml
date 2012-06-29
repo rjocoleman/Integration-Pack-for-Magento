@@ -27,15 +27,15 @@
 -->
 <config>
     <menu>
-        <channels>
+        <system>
             <children>
                 <attribute translate="title" module="xcom_mapping">
-                    <title>Attribute Mapping</title>
+                    <title>X.Attribute Mapping</title>
                     <sort_order>30</sort_order>
                     <action>adminhtml/map_attribute/</action>
                 </attribute>
             </children>
-        </channels>
+        </system>
     </menu>
     <acl>
         <resources>

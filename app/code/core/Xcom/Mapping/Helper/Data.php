@@ -210,4 +210,17 @@ class Xcom_Mapping_Helper_Data extends Mage_Catalog_Helper_Data
         }
         return $attribute->getBackendType();
     }
+
+    /**
+     * Check if attribute have values
+     *
+     * @param $attributeId
+     * @return bool|array
+     */
+    public function isMappingValueAuto($attributeId)
+    {
+        $attributeValues = Mage::getModel('xcom_mapping/attribute_value')
+            ->getByAttributeId($attributeId);
+        return $attributeValues ? $attributeValues : false;
+    }
 }

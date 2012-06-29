@@ -29,7 +29,7 @@ class Xcom_Chronicle_Model_Message_Customer extends Varien_Object
     /**
      * @param Mage_Customer_Model_Customer $customer
      */
-    public function __construct(Mage_Sales_Model_Order_Shipment $customer)
+    public function __construct(Mage_Customer_Model_Customer $customer)
     {
         $this->setData($this->_createCustomer($customer));
     }
@@ -39,14 +39,43 @@ class Xcom_Chronicle_Model_Message_Customer extends Varien_Object
      */
     protected function _createCustomer(Mage_Customer_Model_Customer $customer)
     {
+        $billingAddress = $this->_getAddressWithEntityId($customer, $customer->getDefaultBilling());
+
+        $primaryPhone = ($billingAddress) ? $this->_createPhoneNumber($billingAddress) : null;
+        $company = ($billingAddress) ? $billingAddress->getCompany() : null;
+
+        if (!isset($primaryPhone) || !isset($company)) {
+            // prefer using the billing address for primary phone and company but
+            // if they aren't set, then use any address possible
+
+            $addresses = $customer->getAddresses();
+            if (!empty($addresses)) {
+                foreach ($addresses as $address) {
+                    if (!isset($primaryPhone)) {
+                        $primaryPhone = $this->_createPhoneNumber($address);
+                    }
+
+                    if (!isset($company)) {
+                        $company = $address->getCompany();
+                    }
+                }
+            }
+        }
+
         $data = array(
-            'customerId'    => $customer->getEntityId(),
-            //??
-            'sourceCustomerId'   => null,
-            //??
-            'lastActivityDate'   => null,
-            'primaryContact'     => $this->_createContact($customer, true),
-            'additionalContacts' => $this->_createContact($customer, false)
+            'fullName'      => Mage::helper('xcom_chronicle')->createName($customer),
+            'addresses' => $this->_getAddresses($customer),
+            'primaryPhone' => $primaryPhone,
+            'email' => $this->_createEmailAddress($customer),
+            'gender' => $this->_createGender($customer),
+            'dateOfBirth' => $this->_createBirthday($customer),
+            'company' => $company,
+            'dateCreated' => date('c', strtotime($customer->getCreatedAt())),
+            'lastModified' => date('c', strtotime($customer->getUpdatedAt())),
+            'sourceIds' => null,
+            'doNotCall' => null,
+            'emailOptOut' => null,
+            'id'    => Mage::helper('xcom_chronicle')->createEntityId($customer->getEntityId()),
         );
 
         return $data;
@@ -54,83 +83,75 @@ class Xcom_Chronicle_Model_Message_Customer extends Varien_Object
 
     /**
      * @param Mage_Customer_Model_Customer $customer
-     * @param bool $isPrimary
      * @return array|null
      */
-    protected function _createContact(Mage_Customer_Model_Customer $customer, boolean $isPrimary)
+    protected function _getAddresses(Mage_Customer_Model_Customer $customer)
     {
-        $result = null;
-
-        if ($isPrimary) {
-            $result = array(
-                'fullName'          => $this->_createName($customer),
-                'address'           => null,
-                'primaryPhone'      => null,
-                'additionalPhone'   => null,
-                'emailAddress'      => $this->_createEmailAddress($customer),
-                'extension'         => null
-            );
+        $addrData = array();
+        $addresses = $customer->getAddresses();
+        if (!empty($addresses)) {
+            foreach ($addresses as $address) {
+                $tags = null;
+                if ($customer->getDefaultBilling() == $address->getEntityId()) {
+                    $tags = array(Xcom_Chronicle_Helper_Data::ADDRESS_TAG_BILLING);
+                }
+                $addrData[] = Mage::helper('xcom_chronicle')->createAddress($address, $tags);
+            }
         }
-        else {
+
+        return $addrData;
+    }
+
+    /**
+     * @param Mage_Customer_Model_Customer $customer
+     * @param string $id
+     * @return string|null
+     */
+    protected function _getAddressWithEntityId(Mage_Customer_Model_Customer $customer, $id)
+    {
+        if (isset($id)) {
             $addresses = $customer->getAddresses();
             if (!empty($addresses)) {
-                $result = array();
                 foreach ($addresses as $address) {
-                    $data = array(
-                       'fullName'           => $this->_createName($address),
-                       'address'            => $this->_createAddress($address),
-                       'primaryPhone'       => $this->_createPhoneNumber($address),
-                       'additionalPhone'    => null,
-                       'emailAddress'       => null,
-                       'extension'          => null
-                    );
-                    $result[] = $data;
+                    $entityId = $address->getEntityId();
+                    if ($entityId == $id) {
+                        return $address;
+                    }
                 }
             }
         }
 
-        return $result;
+        return null;
     }
 
     /**
-     * @param $name
-     * @return array
+     * @param Mage_Customer_Model_Customer $customer
+     * @return string|null
      */
-    protected function _createName($name)
+    protected function _createBirthday(Mage_Customer_Model_Customer $customer)
     {
-        $data = array(
-            'firstName'     => $name->getFirstname(),
-            'middleName'    => strlen($name->getMiddlename()) > 0 ? $name->getMiddlename() : null,
-            'lastName'      => $name->getLastname(),
-            'prefix'        => strlen($name->getPrefix()) > 0 ? $name->getPrefix() : null,
-            'suffix'        => strlen($name->getSuffix()) > 0 ? $name->getSuffix() : null
-        );
+        $dob = $customer->getDob();
+        if ($dob) {
+            return date('c', strtotime($dob));
+        }
 
-        return $data;
+        return null;
     }
 
-   /**
-    * @param Mage_Customer_Model_Address $address
-    * @return array|null
-    */
-    protected function _createAddress(Mage_Customer_Model_Address $address)
+    /**
+     * @param Mage_Customer_Model_Customer $customer
+     * @return string|null
+     */
+    protected function _createGender(Mage_Customer_Model_Customer $customer)
     {
-        $region = $address->getRegion();
-        $data = array(
-            'street1'           => $address->getStreet1(),
-            'street2'           => strlen($address->getStreet2()) > 0 ? $address->getStreet2() : null,
-            'street3'           => strlen($address->getStreet3()) > 0 ? $address->getStreet3() : null,
-            'street4'           => strlen($address->getStreet4()) > 0 ? $address->getStreet4() : null,
-            'city'              => $address->getCity(),
-            'county'            => null,
-            'stateOrProvince'   => empty($region) ? null : $region,
-            'postalCode'        => $address->getPostcode(),
-            'country'           => Mage::getModel('directory/country')
-                ->loadByCode($address->getCountryId())
-                ->getIso3Code()
-        );
+        $gender = $customer->getGender();
+        if ($gender == 1) {
+            return 'MALE';
+        } else if ($gender == 2) {
+            return 'FEMALE';
+        }
 
-        return $data;
+        return null;
     }
 
     /**
@@ -154,11 +175,13 @@ class Xcom_Chronicle_Model_Message_Customer extends Varien_Object
     protected function _createPhoneNumber(Mage_Customer_Model_Address $address)
     {
         $primaryPhone = $address->getTelephone();
+        if (!isset($primaryPhone)) {
+            return null;
+        }
 
         $data = array(
             'number'    => $primaryPhone,
-            //?? type
-            'type'      => 'HOME'
+            'type'      => 'UNKNOWN'
         );
 
         return $data;

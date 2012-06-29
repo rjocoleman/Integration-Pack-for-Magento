@@ -59,7 +59,7 @@ class Xcom_Chronicle_Model_Message_Inventory_Stock_Item extends Varien_Object
 
         $data = array(
             'sku' => $productSku,
-            'quantity' => ((int)$stockItem->getQty()),
+            'quantity' => (int)$stockItem->getQty(),
             'locationName' => $locationName
         );
 

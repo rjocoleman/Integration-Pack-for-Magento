@@ -27,11 +27,11 @@
 // Add job to request list of sites
 
 /** @var $job Xcom_Initializer_Model_Job */
-$job = Mage::getModel('xcom_initializer/job');
-$job->setTopic('marketplace/site/search')
-    ->setStatus(Xcom_Initializer_Model_Job::STATUS_PENDING)
-    ->setMessageParams('{"country":"*"}')
-    ->save();
+//$job = Mage::getModel('xcom_initializer/job');
+//$job->setTopic('marketplace/site/search')
+//    ->setStatus(Xcom_Initializer_Model_Job::STATUS_PENDING)
+//    ->setMessageParams('{"country":"*"}')
+//    ->save();
 
 
 // Add jobs to request taxonomy

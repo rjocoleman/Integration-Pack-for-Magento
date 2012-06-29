@@ -28,6 +28,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
 {
     protected $_locale;
     protected $_currency;
+    protected $_product;
 
     /**
      * @param Mage_Catalog_Model_Product $product
@@ -37,6 +38,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
 
         // Get the locale of this product.  Should probably do this for all stores
         $locale = $product->getStore()->getConfig('general/locale/code');
+        $this->_product = $product;
 
         $this->_locale = preg_split('/_/', $locale);
         $this->_currency = Mage::app()->getBaseCurrencyCode();
@@ -55,7 +57,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         }
         $manufacturer = null;
         if ($product->hasData('manufacturer')) {
-           $manufacturer = $product->getAttributeText('manufacturer');
+            $manufacturer = $product->getAttributeText('manufacturer');
         }
 
 
@@ -78,8 +80,8 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
                 $this->_getCurrencyAmount($product->getAttributeText('map')) : null,
             'images'            => $this->_createImageUrls($product),
             'attributes'        => $this->_createAttributes($product),
-            'variationFactors'  => null,
-            'skuList'           => $this->_createSKU($product)
+            'variationFactors'  => $this->_createVariationFactors($product),
+            'skuList'           => $this->_createSkus($product)
         );
 
         return $data;
@@ -91,13 +93,17 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
      */
     protected function _getMsrp($product)
     {
-        if ($product->hasData('msrp')) {
-            if ($product->getAttributeText('msrp')) {
-                return $this->_getCurrencyAmount($product->getAttributeText('msrp'));
+        $helper = Mage::helper('catalog');
+        if (method_exists($helper, 'canApplyMsrp')) {
+            if ($helper->canApplyMsrp($product)) {
+                 if ($product->getAttributeText('msrp')) {
+                    return $this->_getCurrencyAmount($product->getAttributeText('msrp'));
+                }
             }
-            $msrpData = $product->getData('msrp');
-            return $this->_getCurrencyAmount($msrpData);
+        } else if ($product->getData('msrp')) {
+            return $this->_getCurrencyAmount($product->getData('msrp'));
         }
+
         return null;
     }
 
@@ -108,7 +114,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
     protected function _getCurrencyAmount($amount)
     {
         return array(
-            'amount'    => $amount,
+            'amount'    => (string) $amount,
             'code'      => $this->_currency,
         );
     }
@@ -128,36 +134,52 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
      * @param Mage_Catalog_Model_Product $product
      * @return array
      */
-    protected function _createAttributes(Mage_Catalog_Model_Product $product)
+    protected function _createAttributes(Mage_Catalog_Model_Product $product, $attributes = null)
     {
         $result = array();
+
+        $mappedAttributeCodes = array();
+        $codeToName= array();
+        $mappingData = Mage::getModel('xcom_mapping/attribute')
+            ->getSelectAttributesMapping($product->getAttributeSetId());
+        foreach ($mappingData as $mappedData) {
+           //Mage::log("mapped data: " . print_r($mappedData, true), null, 'debug.log', true);
+            $mappedAttributeCodes[] = $mappedData['attribute_code'];
+            $codeToName[$mappedData['attribute_code']] = $mappedData['name'];
+        }
+        //Mage::log("mappedAttributeCodes: " . print_r($mappedAttributeCodes, true), null, 'debug.log', true);
+
+
         /** @var $mapper Xcom_Mapping_Model_Mapper */
         $mappingOptions = Mage::getSingleton('xcom_mapping/mapper')
             ->getMappingOptions($product);
 
         foreach ($mappingOptions as $key => $value) {
-            $value = array(
-                'attributeId'       => $key,
-                //for now hard code it to ProductTypeString, need to figure out about StringEnumerationAttributeValue
-                // or BooleanAttributeValue
-                'attributeValue'    => $this->_createProductTypeAttributeValue($key, $value, 'string'),
-            );
-            $result[] = $value;
+            if(in_array($key, $mappedAttributeCodes)) {
+//                Mage::log("mapping options: " . print_r($mappingOptions, true), null, 'debug.log', true);
+                $value = array(
+                    'attributeId'       => $key,
+                    //for now hard code it to ProductTypeString, need to figure out about StringEnumerationAttributeValue
+                    // or BooleanAttributeValue
+                    'attributeValue'    => $this->_createProductTypeAttributeValue($key, $codeToName[$key], $value, 'string'),
+                );
+                $result[] = $value;
+            }
         }
 
-        $mappedAttributeCodes = array();
-        $mappingData = Mage::getModel('xcom_mapping/attribute')
-            ->getSelectAttributesMapping($product->getAttributeSetId());
-        foreach ($mappingData as $mappedData) {
-            $mappedAttributeCodes[] = $mappedData['attribute_code'];
+
+        if(null === $attributes) {
+            $attributes =  $product->getAttributes();
         }
 
-        $attributes =  $product->getAttributes();
 
-        /** @var $attribute Mage_Catalog_Model_Resource_Eav_Attribute */
         $attributeType = null;
         $attributeValue = null;
+        /** @var $attribute Mage_Catalog_Model_Resource_Eav_Attribute */
         foreach ($attributes as $attribute) {
+//            if($attribute->getIsUserDefined()) {
+//                Mage::log("attribute in foreach: " . print_r($attribute, true), null, 'debug.log', true);
+//            }
             $attributeCode = $attribute->getAttributeCode();
             if ($attribute->getIsUserDefined() && $attribute->getFrontendInput() == 'select') {
                 $attributeValue = $product->getAttributeText($attributeCode);
@@ -173,7 +195,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
                 $value = array(
                     'attributeId'       => $attribute->getName(),
                     'attributeValue'    => $this->_createCustomAttributeValue(
-                            $attributeCode, $attributeValue, $attributeType),
+                        $attribute->getFrontendLabel(), $attributeValue, $attributeType),
                 );
                 $result[] = $value;
             }
@@ -183,69 +205,227 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
     }
 
     /**
+     * @param $product Mage_Catalog_Model_Product
+     */
+    protected function _createVariationFactors($product)
+    {
+        $factors = array();
+        if($product->isConfigurable()) {
+            /** @var $type Mage_Catalog_Model_Product_Type_Configurable */
+            $type = $product->getTypeInstance();
+
+            foreach ($type->getConfigurableAttributesAsArray() as $value) {
+                $factors[] = $value['attribute_code'];
+            }
+        }
+
+        return $factors;
+    }
+
+    /**
      * @param Mage_Catalog_Model_Product $product
      * @return array
      */
-    protected function _createSKU(Mage_Catalog_Model_Product $product)
+    protected function _createSkus(Mage_Catalog_Model_Product $product)
     {
-        $sku = $product->getSku();
-        if(!isset($sku)) {
-            return array();
+        $base_skus = array();
+        if($product->isConfigurable()) {
+            /** @var $type Mage_Catalog_Model_Product_Type_Configurable */
+            $type = $product->getTypeInstance();
+
+            $attributeCodes = array();
+            foreach ($type->getConfigurableAttributesAsArray() as $value) {
+//                Mage::log('attributes configurable: ' . print_r($value, true), null, 'debug.log', true);
+//                Mage::log('attribute_code: ' . $value['attribute_code'], null, 'debug.log', true);
+                $attributeCodes[] = array('code'  => $value['attribute_code'],
+                    'label' => $value['label'],
+                    'id'    => $value['attribute_id']);
+                foreach ($value['values'] as $val) {
+//                    Mage::log('store_label: ' . $val['store_label'], null, 'debug.log', true);
+                }
+            }
+
+            $groups = $type->getChildrenIds($product->getId());
+//            Mage::log("groups: " . print_r($groups, true), null, 'debug.log', true);
+            foreach ($groups as $group) {
+                foreach ($group as $childId) {
+                    /** @var $childProduct Mage_Catalog_Model_Product */
+                    $childProduct = Mage::getModel('catalog/product')->load($childId);
+                    $attributes = array();
+                    foreach ($attributeCodes as $array) {
+//                        $attributes[$array['code']] = array('value' => $childProduct->getAttributeText($array['code']),
+//                            'name'  => $array['label']);
+
+                        $attributes[] = $childProduct->getTypeInstance(true)->getAttributeById($array['id'], $childProduct);
+                    }
+                    $attributes = $this->_createAttributes($childProduct, $attributes);
+
+                    $base_skus[] = array( 'sku' => $childProduct->getSku(),
+                        'attributes' => $attributes,
+                    );
+
+                }
+            }
+
+
+        } else {
+            $base_skus[] = array('sku' => $product->getSku());
         }
-        $data =
-            array(
-                array(
-                    'sku'                       => $product->getSku(),
-                    'productId'                 => null,
-                    'MSRP'                      => null,
-                    'MAP'                       => null,
-                    'variationAttributeValues'  => null,
-                    'images'                    => null
-                )
-            );
+
+
+        $stack = array($base_skus);
+
+//        Mage::log(print_r($stack, true), null, 'debug.log', true);
+        $skus = $this->_findAllSkus($stack);
+//        Mage::log(print_r($skus, true), null, 'debug.log', true);
+
+        // TODO: Need to test this case again
+//        $sku = $product->getSku();
+//        if(!isset($sku)) {
+//            return array();
+//        }
+
+        $data = array();
+        foreach ($skus as $node) {
+            $sku = $node['sku'];
+            $attributes = $node['attributes'];
+            $data[] = $this->_createSku($sku, $attributes);
+        }
 
         return $data;
     }
 
+    private function _createStringAttribute($code, $name, $value)
+    {
+        return array(
+            'attributeId'       => $code,
+            'attributeValue'    => $this->_createCustomAttributeValue(
+                $name, $value, 'string'),
+        );
+    }
+
+    protected function _createSku($sku, $attributes = null)
+    {
+//        Mage::log('SKU: ' . $sku . '  Attributes: ' . print_r($attributes, true), null, 'debug.log', true);
+        $variations = null;
+        if(isset($attributes)) {
+            $variations = array();
+            foreach ($attributes as $array) {
+                $variations = array_merge($variations, $array);
+            }
+        }
+        $variations = empty($variations) ? null : array($variations);
+        return array(
+            'sku'                       => $sku,
+            'productId'                 => $this->_product->getId(),
+            'MSRP'                      => null,
+            'MAP'                       => null,
+            'variationAttributeValues'  => $variations,
+            'images'                    => null
+        );
+    }
+
+    private function _findAllSkus($stack, $skus = array(), $prefix = '', $attributes = array())
+    {
+//        Mage::log("stack: " . print_r($stack, true) . " skus: " . print_r($skus, true) . "  prefix: {$prefix}", null, 'debug.log', true);
+        $parts = array_shift($stack);
+        if(null === $parts) {
+            $skus[] = array('sku' => $prefix, 'attributes' => $attributes);
+            return $skus;
+        }
+        foreach ($parts as $node) {
+            $skuSegment = $node['sku'];
+            $middle = (empty($prefix) || empty($skuSegment)) ? '' : '-';
+            $curPrefix = $prefix . $middle . $skuSegment;
+            if($node != null && array_key_exists('attributes', $node) && $node['attributes'] != null) {
+                $curAttributes = array_merge($attributes, $node['attributes']);
+            } else {
+                $curAttributes = $attributes;
+            }
+            $skus = $this->_findAllSkus($stack, $skus, $curPrefix, $curAttributes);
+        }
+        return $skus;
+    }
+
     /**
+     * Returns data about images associated with product
      * @param Mage_Catalog_Model_Product $product
      * @return array|null
      */
     protected function _createImageUrls(Mage_Catalog_Model_Product $product)
     {
-        $image = $product->getData('image');
-        if (empty($image) || $image =='no_selection') {
-            return null;
-        }
-
-        $imageCollection = array();
-        $imageUrl = (string)Mage::helper('catalog/image')->init($product, 'image');
-        $imageCollection[] = $this->_getNotSecureImageUrl($imageUrl);
-
-        //gallery
-        $mediaGallery = $product->getMediaGalleryImages();
-        foreach ($mediaGallery as $image) {
-            $imageCollection[] = $this->_getNotSecureImageUrl($image->getUrl());
-        }
-
-        if (empty($imageCollection)) {
-            return null;
-        }
-
         $result = array();
+        //get media images associated with product
+        $images = $product->getMediaGalleryImages();
 
-        foreach ($imageCollection as $url){
+        if (!empty($images)) {
+            foreach ($images as $image ) {
+                $isDeleted = $image->getRemoved();
+                if (!$isDeleted) {
+                    $label = $image->getLabel();
+                    $data = array(
+                        'url'     => $this->_getNotSecureImageUrl($image->getUrl()),
+                        'height'  => null,
+                        'width'   => null,
+                        'label'   => $label ? $this->_createLocalizedValue($label) : null,
+                        'altText' => null,
+                        'tags'    => null,
+                    );
+                    $result[] = $data;
+                }
+            }
+        }
+
+
+        $image = $product->getData('image');
+        if (!empty($image) && $image !='no_selection') {
+            $imageUrl = (string)Mage::helper('catalog/image')->init($product, 'image');
+            $label = $product->getData('image_label');
             $data = array(
-                'url'       => $url,
-                'height'    => null,
-                'width'     => null,
-                'label'     => null,
-                'altText'   => null
+                'url'     => $this->_getNotSecureImageUrl($imageUrl),
+                'height'  => null,
+                'width'   => null,
+                'label'   => $label ? $this->_createLocalizedValue($label) : null,
+                'altText' => null,
+                'tags'    => null,
             );
+
             $result[] = $data;
         }
 
-        return $result;
+        $image = $product->getData('small_image');
+        if (!empty($image) && $image !='no_selection') {
+            $imageUrl = (string)Mage::helper('catalog/image')->init($product, 'small_image');
+            $label = $product->getData('small_image_label');
+            $data = array(
+                'url'     => $this->_getNotSecureImageUrl($imageUrl),
+                'height'  => null,
+                'width'   => null,
+                'label'   => $label ? $this->_createLocalizedValue($label) : null,
+                'altText' => null,
+                'tags'    => null,
+            );
+
+            $result[] = $data;
+        }
+
+        $image = $product->getData('thumbnail');
+        if (!empty($image) && $image !='no_selection') {
+            $imageUrl = (string)Mage::helper('catalog/image')->init($product, 'thumbnail');
+            $label = $product->getData('thumbnail_label');
+            $data = array(
+                'url'     => $this->_getNotSecureImageUrl($imageUrl),
+                'height'  => null,
+                'width'   => null,
+                'label'   => $label ? $this->_createLocalizedValue($label) : null,
+                'altText' => null,
+                'tags'    => array('THUMBNAIL'),
+            );
+
+            $result[] = $data;
+        }
+
+        return count($result) ? $result : null;
     }
 
     /**
@@ -273,12 +453,12 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         return $mappedAttributes;
     }
 
-    protected function _createProductTypeAttributeValue($key, $value, $type)
+    protected function _createProductTypeAttributeValue($key, $name, $value, $type)
     {
         $result = array();
         switch ($type) {
             case 'string':
-                $result['value'] = $this->_createProductTypeStringAttributeValue($key, $value);
+                $result['value'] = $this->_createProductTypeStringAttributeValue($key, $name, $value);
                 break;
             case 'enumeration': break;
             case 'boolean': break;
@@ -303,10 +483,10 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         return $result;
     }
 
-    protected function _createProductTypeStringAttributeValue($name, $value)
+    protected function _createProductTypeStringAttributeValue($id, $name, $value)
     {
         $data = array(
-            'valueId'        => $name,
+            'valueId'        => $id,
             'attributeValue' => $this->_createStringAttributeValue($name, $value)
         );
         return $data;

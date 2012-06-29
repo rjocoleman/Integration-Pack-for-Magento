@@ -60,6 +60,8 @@ class Xcom_Initializer_Model_Resource_Extension extends Mage_Core_Model_Mysql4_A
         $adapter->query("SET FOREIGN_KEY_CHECKS = 1");
         $adapter->delete($this->getTable('core/resource'), "code LIKE 'xcom_%'");
         $this->_getSession()->addNotice("$tableCounter tables were dropped");
+
+        Mage::app()->cleanCache();
     }
 
     /**

@@ -106,7 +106,7 @@ class Xcom_Mapping_Adminhtml_Mapping_AttributeController extends Mage_Adminhtml_
      */
     public function saveAction()
     {
-        $params         = $this->_initParams();
+        $params = $this->_initParams();
         try {
             Mage::getModel('xcom_mapping/relation')->saveRelation(
                 $params->getAttributeSetId(),

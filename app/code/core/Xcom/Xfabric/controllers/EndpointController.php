@@ -82,7 +82,17 @@ class Xcom_Xfabric_EndpointController extends Mage_Core_Controller_Front_Action
      */
     public function _getHeaders()
     {
-        return getallheaders();
+        if (function_exists('getallheaders')) {
+            return getallheaders();
+        }
+
+        $headers = array();
+        foreach($_SERVER as $headerName => $headerValue) {
+            if (substr($headerName, 0, 5) == 'HTTP_') {
+                $headers[substr($headerName, 5)] = $headerValue;
+            }
+        }
+        return $headers;
     }
 }
 

@@ -58,6 +58,7 @@ class Xcom_Chronicle_Model_Message_Inventory_Stock_Get_Inbound extends Xcom_Xfab
                     $response = array(
                         'stockItems' => $resultSet['results'],
                         'destination_id' => $this->getPublisherPseudonym(),
+                        'correlation_id' => $this->getCorrelationId(),
                     );
                     Mage::helper('xcom_xfabric')->send('com.x.inventory.v1/StockItemLookup/LookupStockItemSucceeded', $response);
                 }
@@ -65,6 +66,7 @@ class Xcom_Chronicle_Model_Message_Inventory_Stock_Get_Inbound extends Xcom_Xfab
                     $response = array(
                         'errors' => $resultSet['errors'],
                         'destination_id' => $this->getPublisherPseudonym(),
+                        'correlation_id' => $this->getCorrelationId(),
                     );
                     Mage::helper('xcom_xfabric')->send('com.x.inventory.v1/StockItemLookup/LookupStockItemFailed', $response);
                 }
@@ -84,6 +86,7 @@ class Xcom_Chronicle_Model_Message_Inventory_Stock_Get_Inbound extends Xcom_Xfab
             $response = array(
                 'errors' => $errors,
                 'destination_id' => $this->getPublisherPseudonym(),
+                'correlation_id' => $this->getCorrelationId(),
             );
             Mage::helper('xcom_xfabric')->send('com.x.inventory.v1/StockItemLookup/LookupStockItemFailed', $response);
         }

@@ -126,7 +126,7 @@ class Xcom_Mapping_Model_Resource_Attribute extends Xcom_Mapping_Model_Resource_
         if (!$relationAttributeId) {
             $adapter->insertOnDuplicate($relationTable, $data);
             $relationAttributeId = $this->_getRelationId($relationProductTypeId, $attributeId, $mappingAttributeId);
-            if (!$mappingAttributeId) {
+            if (!$mappingAttributeId || !Mage::helper('xcom_mapping')->isMappingValueAuto($mappingAttributeId)) {
                 $this->_saveValuesDirectRelation($attributeId, $relationAttributeId);
             }
         }

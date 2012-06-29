@@ -128,6 +128,7 @@ class Xcom_Mapping_Model_Relation extends Mage_Core_Model_Abstract
     {
         $productTypeId      = ($productTypeId == self::DIRECT_MAPPING) ? null : $productTypeId;
         $mappingAttributeId = ($mappingAttributeId == self::DIRECT_MAPPING) ? null : $mappingAttributeId;
+
         $this->getResource()->beginTransaction();
         try {
             $relationProductTypeId = $this->_getProductType()->saveRelation($attributeSetId, $productTypeId);

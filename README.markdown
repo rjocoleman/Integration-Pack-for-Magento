@@ -3,7 +3,7 @@ X.commerce Integration Pack for Magento (Alpha)
 ---
 
 Overview
-========
+--------
 
 The X.commerce Integration Pack for Magento is a package for Magento
 developers who are interested in developing X.commerce Fabric enabled
@@ -16,23 +16,23 @@ receiving messages from Fabric, mapping data between X.commerce Open
 Commerce Language and Magento formats.
 
 Contents of the X.commerce Integration Pack
-===========================================
+-------------------------------------------
 
 The Integration Pack contains three extensions as described below:
 
 
-**X.commerce Fabric Integration for Magento** - Facilitates onboarding
+***X.commerce Fabric Integration for Magento*** - Facilitates onboarding
 and communication between Magento instances and X.commerce.
 
-**X.commerce Data Integration for Magento** - Maps data between Magento
+***X.commerce Data Integration for Magento*** - Maps data between Magento
 instances and X.commerce Open Commerce Language standards.
 
-**X.commerce Data Mapping for Magento** - Maps merchant defined
+***X.commerce Data Mapping for Magento*** - Maps merchant defined
 product taxonomy within Magento instances to X.commerce product
 taxonomy.
 
 Important: Please read before using the Integration Pack
-========================================================
+--------------------------------------------------------
 
 Please note that the X.commerce Integration Pack for Magento is in
 active development and not fully productized. The code base currently
@@ -50,7 +50,7 @@ how the Sell on eBay extension was integrated with the Fabric.
 Please note that the contents of the Integration Pack are subject to
 change. In the alpha version, backward compatibility is not enabled.
 
-**Send Us Your Feedback**
+***Send Us Your Feedback***
 
 Please send comments, questions, and issues to
 [productfeedback@x.com](mailto:productfeedback@x.com). The X.commerce
