@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Product_Get_Fail extends Xcom_Xfabric_Model_M
         $this->_topic = 'com.x.pim.v1/ProductLookup/LookupProductFailed';
         $this->_schemaRecordName = 'LookupProductFailed';
         $this->_schemaFile = 'Xcom_Chronicle/OrderManagement.avpr';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_schemaVersion = '1.1.4';
     }
 
     /**

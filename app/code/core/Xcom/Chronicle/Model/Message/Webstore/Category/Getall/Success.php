@@ -29,9 +29,9 @@ class Xcom_Chronicle_Model_Message_Webstore_Category_Getall_Success extends Xcom
     protected function _construct()
     {
         parent::_construct();
-        $this->_topic = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllCategorySucceeded';
-        $this->_schemaRecordName = 'GetAllCategorySucceeded';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_topic               = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllCategorySucceeded';
+        $this->_schemaRecordName    = 'GetAllCategorySucceeded';
+        $this->_schemaVersion       = "1.0.5";
     }
 
     /**

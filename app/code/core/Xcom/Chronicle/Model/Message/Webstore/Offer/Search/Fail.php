@@ -31,7 +31,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Search_Fail extends Xcom_Xfabr
         parent::_construct();
         $this->_topic = 'com.x.webstore.v1/WebStoreOfferSearch/SearchWebStoreOfferFailed';
         $this->_schemaRecordName = 'SearchWebStoreOfferFailed';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_schemaVersion = "1.0.5";
     }
 
     /**

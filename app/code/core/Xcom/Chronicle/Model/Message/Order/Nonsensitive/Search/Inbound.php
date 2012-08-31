@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Order_Nonsensitive_Search_Inbound extends Xco
     protected function _construct()
     {
         $this->_topic               = 'com.x.ordermanagement.v2/OrderSearch.NonSensitive/SearchOrder';
-        $this->_schemaVersion       = "2.2.8";
+        $this->_schemaVersion       = "2.2.13";
 
         parent::_construct();
     }
@@ -114,7 +114,8 @@ class Xcom_Chronicle_Model_Message_Order_Nonsensitive_Search_Inbound extends Xco
                 Mage::throwException('Unsupported query parameter: predicates');
             }
             if (isset($query['ordering']) && !empty($query['ordering'])) {
-                Mage::throwException('Unsupported query parameter: ordering');
+          // let's suppress this exception for now - as it's a mandatory field now.  We'll still ignore it.  @todo
+          //Mage::throwException('Unsupported query parameter: ordering');
             }
 
             $count = $orders->getSize();

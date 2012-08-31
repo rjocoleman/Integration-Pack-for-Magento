@@ -54,6 +54,7 @@ class Xcom_Mapping_Model_Resource_Product_Type_Collection extends Xcom_Mapping_M
                 'attribute_set_name'        => 'eas.attribute_set_name',
                 'mapping_product_type_id'   => $this->_getMappingProductTypeIdExpr(),
                 'product_type_name'         => $this->getProductTypeNameExpr(),
+                'status'                    => $this->getStatusExpr(),
             ));
         $this->setUniqueIdentifier('attribute_set_id');
         return $this;
@@ -83,6 +84,19 @@ class Xcom_Mapping_Model_Resource_Product_Type_Collection extends Xcom_Mapping_M
                         . 'THEN ' . $this->getConnection()->quote($this->_getHelper()->__('None'))
                 . ' ELSE ' . $this->getConnection()->quote($this->_getHelper()->__('Not mapped')) . ' END '
             . ' ELSE ' . $this->getEntityLocalNameExpr() . ' END'
+        );
+    }
+
+
+    /**
+     * @return Zend_Db_Expr
+     */
+    public function getStatusExpr()
+    {
+
+        return new Zend_Db_Expr(
+             $this->getConnection()->quote($this->_getHelper()->__("0"))
+
         );
     }
 

@@ -29,9 +29,9 @@ class Xcom_Chronicle_Model_Message_Webstore_Category_Getall_Fail extends Xcom_Xf
     protected function _construct()
     {
         parent::_construct();
-        $this->_topic = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllCategoryFailed';
-        $this->_schemaRecordName = 'GetAllCategoryFailed';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_topic               = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllCategoryFailed';
+        $this->_schemaRecordName    = 'GetAllCategoryFailed';
+        $this->_schemaVersion       = "1.0.5";
     }
 
     /**

@@ -83,14 +83,20 @@ class Xcom_Xfabric_EndpointController extends Mage_Core_Controller_Front_Action
     public function _getHeaders()
     {
         if (function_exists('getallheaders')) {
-            return getallheaders();
-        }
+            $headersRaw = getallheaders();
+        } else {
+            $headersRaw = array();
+            foreach($_SERVER as $headerName => $headerValue) {
 
-        $headers = array();
-        foreach($_SERVER as $headerName => $headerValue) {
-            if (substr($headerName, 0, 5) == 'HTTP_') {
-                $headers[substr($headerName, 5)] = $headerValue;
+                if (substr($headerName, 0, 5) == 'HTTP_') {
+                    $headersRaw[str_replace('_', '-', substr($headerName, 5))] = $headerValue;
+                }
             }
+        }
+        $headers = array();
+        foreach($headersRaw as $key => $value)
+        {
+            $headers[mb_convert_encoding($key, "UTF-8")] = $value;
         }
         return $headers;
     }

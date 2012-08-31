@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Order_Marketplaceshipped_Outbound extends Xco
         $this->_topic = 'com.x.ordermanagement.v2/ProcessSalesChannelOrder.MarketplaceOrder/MarketplaceOrderShipped';
         $this->_schemaRecordName = 'MarketplaceOrderShipped';
         $this->_schemaFile = 'Xcom_Chronicle/com.x.ordermanagement.v2.avpr';
-        $this->_schemaVersion  = "2.1.4";
+        $this->_schemaVersion  = "2.2.13";
     }
 
     /**

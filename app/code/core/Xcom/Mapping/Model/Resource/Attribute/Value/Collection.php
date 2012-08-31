@@ -35,6 +35,36 @@ class Xcom_Mapping_Model_Resource_Attribute_Value_Collection extends Xcom_Mappin
         $this->_init('xcom_mapping/attribute_value');
     }
 
+
+    public function addValueIdColumn() {
+        $this->getSelect()->columns(array('mer.value_id', 'mer.relation_value_id'));
+        return $this;
+    }
+
+    public function initMappingValueView() {
+        $select = $this->getSelect()->reset();
+        $select->from(array('ptr' => $this->getTable('xcom_mapping/product_type_relation')), array())
+            ->join(array('mar' => $this->getTable('xcom_mapping/attribute_relation')),
+            'ptr.relation_product_type_id = mar.relation_product_type_id', array())
+            ->join(array('mer' => $this->getTable('xcom_mapping/attribute_value_relation')),
+            'mer.relation_attribute_id = mar.relation_attribute_id', array())
+            ->joinLeft(array('main_table' => $this->getMainTable()),
+            'main_table.mapping_value_id = mer.mapping_value_id', array())
+            ->columns(array(
+            'attribute_set_id'          => 'ptr.attribute_set_id',
+            'mapping_product_type_id'   => 'ptr.mapping_product_type_id',
+            'attribute_id'              => 'mar.attribute_id',
+            'mapping_attribute_id'      => 'mar.mapping_attribute_id',
+            'value_id'                  => new Zend_Db_Expr('IFNULL(mer.value_id, mer.hash_value)'),
+            'mapping_value_id'          => 'mer.mapping_value_id',
+            'origin_value_id'           => 'main_table.value_id',
+            'mapping_value_form_id'     => new Zend_Db_Expr('IFNULL(mer.mapping_value_id, -1)'),
+            'mapping_attribute_value'   => $this->getEntityLocalNameExpr()
+        ));
+        $this->_joinLocaleTable();
+        return $this;
+    }
+
     /**
      * Join relation data
      *
@@ -42,6 +72,7 @@ class Xcom_Mapping_Model_Resource_Attribute_Value_Collection extends Xcom_Mappin
      * @param int $attributeId
      * @return Xcom_Mapping_Model_Resource_Product_Type_Collection
      */
+
     public function initValueRelations($attributeSetId, $attributeId)
     {
         $select = $this->getSelect()->reset();
@@ -65,6 +96,35 @@ class Xcom_Mapping_Model_Resource_Attribute_Value_Collection extends Xcom_Mappin
                 'mapping_value_form_id'     => new Zend_Db_Expr('IFNULL(mer.mapping_value_id, -1)'),
                 'mapping_attribute_value'   => $this->getEntityLocalNameExpr()
             ));
+        $this->_joinLocaleTable();
+        return $this;
+    }
+
+
+    public function initMappedValueRelations($attributeSetId, $mapping_product_type_id,t$attributeId)
+    {
+        $select = $this->getSelect()->reset();
+        $select->from(array('ptr' => $this->getTable('xcom_mapping/product_type_relation')), array())
+            ->join(array('mar' => $this->getTable('xcom_mapping/attribute_relation')),
+            'ptr.relation_product_type_id = mar.relation_product_type_id', array())
+            ->join(array('mer' => $this->getTable('xcom_mapping/attribute_value_relation')),
+            'mer.relation_attribute_id = mar.relation_attribute_id', array())
+            ->join(array('main_table' => $this->getMainTable()),
+            'main_table.mapping_value_id = mer.mapping_value_id', array())
+            ->where('ptr.attribute_set_id = ?', $attributeSetId)
+            ->where('mar.attribute_id = ?', $attributeId)
+            ->where('ptr.mapping_product_type_id = ?', $mapping_product_type_id)
+            ->columns(array(
+            'attribute_set_id'          => 'ptr.attribute_set_id',
+            'mapping_product_type_id'   => 'ptr.mapping_product_type_id',
+            'attribute_id'              => 'mar.attribute_id',
+            'mapping_attribute_id'      => 'mar.mapping_attribute_id',
+            'value_id'                  => new Zend_Db_Expr('IFNULL(mer.value_id, mer.hash_value)'),
+            'mapping_value_id'          => 'mer.mapping_value_id',
+            'origin_value_id'           => 'main_table.value_id',
+            'mapping_value_form_id'     => new Zend_Db_Expr('IFNULL(mer.mapping_value_id, -1)'),
+            'mapping_attribute_value'   => $this->getEntityLocalNameExpr()
+        ));
         $this->_joinLocaleTable();
         return $this;
     }

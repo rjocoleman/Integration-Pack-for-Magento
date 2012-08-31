@@ -33,23 +33,64 @@ class Xcom_Mapping_Model_Mapper extends Mage_Core_Model_Abstract
     protected $_options = array();
 
     /**
-     * List of custom attribute codes which are required in mapped options.
-     *
-     * {@internal If one of these attributes was not mapped
-     * it must be added to mapped attribute list anyway.}
-     *
-     * @var array
-     */
-    protected $_requiredCustomAttributes = array(
-        'xcom_condition'
-    );
-
-    /**
      * Init resource model
      */
     public function _construct()
     {
         $this->_init('xcom_mapping/mapper');
+    }
+
+    /**
+     * Retrieve mapping for text attributes
+     *
+     * @param $product
+     * @return array
+     */
+    public function getMappedEavValues($product)
+    {
+        return $this->getResource()->getMappedEavValues($product);
+    }
+
+    /**
+     * Retrieve eav tables
+     *
+     * @return array
+     */
+    public function getEavTables()
+    {
+        return $this->getResource()->getEavTables();
+    }
+
+    /**
+     * Load attribute mapping target attributes with their values.
+     *
+     * @param  Mage_Catalog_Model_Product $product
+     * @return array
+     */
+    public function getMappingOptions(Mage_Catalog_Model_Product $product)
+    {
+        $this->_options = $this->getMappedEavValues($product);
+        $attributeSetId = $product->getAttributeSetId();
+        $attributeModel = Mage::getModel('xcom_mapping/attribute');
+
+        // retrieve all mapped select attributes for attribute set
+        $mappedAttributes = $attributeModel->getSelectAttributesMapping($attributeSetId);
+        if (!empty($mappedAttributes)) {
+            foreach ($mappedAttributes as $attribute) {
+                $this->_retrieveAttributeMapping($product, $attribute, $attributeSetId);
+            }
+        }
+
+        // retrieve all mapped text attributes for attribute set
+        $mappedAttributesText = $attributeModel->getTextAttributesMapping($attributeSetId);
+        if (!empty($mappedAttributesText)) {
+            foreach ($mappedAttributesText as $attribute) {
+                $this->_retrieveAttributeMapping($product, $attribute, $attributeSetId);
+            }
+        }
+
+        $this->_addRequiredCustomAttributes($mappedAttributes, $product);
+        return $this->_options;
     }
 
     /**
@@ -73,6 +114,32 @@ class Xcom_Mapping_Model_Mapper extends Mage_Core_Model_Abstract
                 $this->_options[$mappedAttribute['origin_attribute_id']] = $mappedValue['origin_value_id'];
             }
         }
+        else {
+            //Custom value mapping, pass through the value
+            $this->_options[$mappedAttribute['origin_attribute_id']] =
+                $product->getAttributeText($mappedAttribute['attribute_code']);
+        }
+        return $this;
+    }
+
+    /**
+     * Retrieve values mapping when attribute type is text
+     *
+     * @param Mage_Catalog_Model_Product $product
+     * @param $mappedAttribute
+     * @param $mappedValue
+     * @return Xcom_Mapping_Model_Mapper
+     */
+    protected function _retrieveAttributeTextValueMapping($product, $mappedAttribute, $mappedValue)
+    {
+        // for custom attribute value
+        if ($mappedValue['origin_value_id'] == null) {
+            $this->_options[$mappedAttribute['attribute_code']] =
+                $product->getData($mappedAttribute['attribute_code']);
+        } else {
+            // retrieve mapped attribute value with canonical locale
+            $this->_options[$mappedAttribute['origin_attribute_id']] = $mappedValue['origin_value_id'];
+        }
         return $this;
     }
 
@@ -86,6 +153,7 @@ class Xcom_Mapping_Model_Mapper extends Mage_Core_Model_Abstract
      */
     protected function _retrieveAttributeMapping($product, $mappedAttribute, $attributeSetId)
     {
+        /** @var $valueModel Xcom_Mapping_Model_Attribute_Value */
         $valueModel = Mage::getModel('xcom_mapping/attribute_value');
         $value      = $product->getData($mappedAttribute['attribute_code']);
         // if attributed was mapped as custom retrieve its own value
@@ -93,42 +161,53 @@ class Xcom_Mapping_Model_Mapper extends Mage_Core_Model_Abstract
             //hack to get store depended attribute labels
             $defaultStore = Mage::app()->getStore()->getId();
             Mage::app()->getStore()->setId($product->getStoreId());
+            // getAttributeText retrieve value for select type of attribute
             $value = $product->getAttributeText($mappedAttribute['attribute_code']);
+            if (!$value) {
+                $value = $product->getData($mappedAttribute['attribute_code']);
+            }
             if (!empty($value)) {
+                //only need to pass through the value
                 $this->_options[$mappedAttribute['attribute_code']] = $value;
             }
             Mage::app()->getStore()->setId($defaultStore);
         // apply stored mapping for attribute value
         } elseif ($value) {
-            // retrieve mapped attributes value by product attribute value
-            $mappedValues = $valueModel->getSelectValuesMapping($attributeSetId,
-                $mappedAttribute['attribute_id'], $value);
-            $this->_retrieveAttributeValueMapping($product, $mappedAttribute, reset($mappedValues));
+            $attribute = Mage::getSingleton('eav/config')
+                ->getAttribute(Mage_Catalog_Model_Product::ENTITY, $mappedAttribute['attribute_code']);
+            if ('select' == $attribute->getFrontendInput() || 'multiselect' == $attribute->getFrontendInput()) {
+                // retrieve mapped attributes value by product attribute value
+                $mappedValues = $valueModel->getSelectValuesMapping($attributeSetId,
+                    $mappedAttribute['attribute_id'], $value);
+                $this->_retrieveAttributeValueMapping($product, $mappedAttribute, reset($mappedValues));
+            } else {
+                //always pass through the magento attribute value for non-select attributs
+                $this->_options[$mappedAttribute['origin_attribute_id']] = $value;
+            }
         }
         return $this;
     }
 
     /**
-     * Load attribute mapping target attributes with their values.
-     *
-     * @param  Mage_Catalog_Model_Product $product
+     * Return values for mapped attribute-value
+     * 
+     * @param $attributeCode
+     * @param Xcom_Mapping_Model_Attribute_Value $valueModel
+     * @param $attributeSetId
+     * @param $value
      * @return array
      */
-    public function getMappingOptions(Mage_Catalog_Model_Product $product)
+    protected function _retrieveMappedValuesForTextAttribute($attributeCode,
+        Xcom_Mapping_Model_Attribute_Value $valueModel, $attributeSetId, $value)
     {
-        $this->_options = $this->getMappedEavValues($product);
-        $attributeSetId = $product->getAttributeSetId();
-        $attributeModel = Mage::getModel('xcom_mapping/attribute');
-
-        // retrieve all mapped select attributes for attribute set
-        $mappedAttributes = $attributeModel->getSelectAttributesMapping($attributeSetId);
-        if (!empty($mappedAttributes)) {
-            foreach ($mappedAttributes as $attribute) {
-                $this->_retrieveAttributeMapping($product, $attribute, $attributeSetId);
-            }
-        }
-        $this->_addRequiredCustomAttributes($mappedAttributes, $product);
-        return $this->_options;
+        $attribute = Mage::getSingleton('eav/config')
+            ->getAttribute(Mage_Catalog_Model_Product::ENTITY, $attributeCode);
+        $hashTable = Mage::getResourceModel('xcom_mapping/attribute')
+                        ->getEavValuesByAttribute($attribute->getAttributeId());
+        $hashTable = array_flip($hashTable);
+        $mappedValues = $valueModel->getTextValuesMapping($attributeSetId,
+            $attributeCode, $hashTable[$value]);
+        return $mappedValues;
     }
 
     /**
@@ -159,23 +238,14 @@ class Xcom_Mapping_Model_Mapper extends Mage_Core_Model_Abstract
     }
 
     /**
-     * Retrieve mapping for text attributes
+     * List of custom attribute codes which are required in mapped options.
      *
-     * @param $product
-     * @return array
-     */
-    public function getMappedEavValues($product)
-    {
-        return $this->getResource()->getMappedEavValues($product);
-    }
-
-    /**
-     * Retrieve eav tables
+     * {@internal If one of these attributes was not mapped
+     * it must be added to mapped attribute list anyway.}
      *
-     * @return array
+     * @var array
      */
-    public function getEavTables()
-    {
-        return $this->getResource()->getEavTables();
-    }
+    protected $_requiredCustomAttributes = array(
+        'xcom_condition'
+    );
 }

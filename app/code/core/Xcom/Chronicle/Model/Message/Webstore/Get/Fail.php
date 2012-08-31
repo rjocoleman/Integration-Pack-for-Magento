@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Get_Fail extends Xcom_Xfabric_Model_
         $this->_topic = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllWebStoreFailed';
         $this->_schemaRecordName = 'GetAllWebStoreFailed';
         $this->_schemaFile = 'Xcom_Chronicle/com_x_webstore_v1.avpr';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_schemaVersion = "1.0.5";
     }
 
     /**

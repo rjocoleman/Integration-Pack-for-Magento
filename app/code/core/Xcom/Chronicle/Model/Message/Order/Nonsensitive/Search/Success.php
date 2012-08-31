@@ -30,7 +30,7 @@ class Xcom_Chronicle_Model_Message_Order_Nonsensitive_Search_Success extends Xco
     {
         parent::_construct();
         $this->_topic = 'com.x.ordermanagement.v2/OrderSearch.NonSensitive/SearchNonSensitiveOrderSucceeded';
-        $this->_schemaVersion  = "2.2.8";
+        $this->_schemaVersion  = "2.2.13";
     }
 
     /**

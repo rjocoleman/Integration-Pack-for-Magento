@@ -23,28 +23,78 @@
  * @copyright   Copyright (c) 2010 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://www.magentocommerce.com/license/enterprise-edition
  */
- /** @var $this Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Tree */
+/** @var $this Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Tree */
 ?>
-<div class="product-type-col">
+<!--div class="product-type-col" xmlns="http://www.w3.org/1999/html"-->
+<div xmlns="http://www.w3.org/1999/html">
+    <div style="padding-bottom: 15px; z-index: -2; margin-top: -30px">
+        Use the search feature to find an X.commerce attribute set that most closely matches 
+        your Magento attribute set by entering a keyword in the Quick Search field.
+    </div>
     <div class="tree-actions">
         <?php if ($this->getProductTypeArray()): ?>
         <a href="#" onclick="tree.collapseTree(); return false;">
-            <?php echo $this->__('Collapse All'); ?>
+            <!--?php echo $this->__('Collapse All'); ?-->
         </a>
-        <span class="separator">|</span>
+        <span><b>Quick Search</b></span>
         <a href="#" onclick="tree.expandTree(); return false;">
-            <?php echo $this->__('Expand All'); ?>
+            <!--?php echo $this->__('Expand All'); ?-->
         </a>
         <?php else : ?>
-            <?php echo $this->__("Target Attribute data is not available. Please try again.");?>
+        <?php echo $this->__("Target Attribute data is not available. Please try again."); ?>
         <?php endif; ?>
     </div>
-    <?php if ($this->getProductTypeArray()): ?>
-    <div class="tree-holder">
-        <div id="tree-div" class="product-type-tree-div"></div>
-        <input name="mapping_product_type_id" class="required-entry"
-            id="mapping_product_type_id" type="hidden" value="" />
-    </div>
+    <!--div class="search_filter"-->
+    <table>
+
+        <tr>
+            <td valign="middle">
+                <div>
+                    <div>
+                        <!--?php echo $this->__('Filter:'); ?-->
+                        <input  style="width:400px " type="text" placeholder="Find X.commerce attribute set" size="50"
+                           class="search_filter"  name="search_filter"
+                           id="product_type_search_filter" text-align="left">
+                        <div class="icon sm quick-search-symbol">
+                        </div>
+                    </div>
+                </div>
+    <div style="padding-bottom: 20px"></div>
+<?php if ($this->getProductTypeArray()): ?>
+    <!--div class="tree-holder"-->
+    <div><p></p></div>
+    <table border="0px" color="silver" width="450px" cellpadding="10px">
+        <tr>
+            <td>
+                <table class=table-border width=403px>
+                    <tr>
+                        <td>
+                            <div id="tree-div" class="product-type-tree-div"></div>
+                            <input name="mapping_product_type_id" class="required-entry"
+                                   id="mapping_product_type_id" type="hidden" value=""/>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+            </td>
+            <td>
+                <table class="table-border-left" width="0px" height="380px">
+                    <tr>
+                        <td></td>
+                    </tr>
+                </table>
+            </td>
+    <td class="box sm silver-arrow" align="right" width="30px">
+        <!--img src="<!--?php echo $this->getSkinUrl('xcom/images/avatar5_33.gif'); ?>" /-->
+        <div class="icon lg help-arrow"></div>
+    </td>
+    <td valign="middle">
+        <div align="center" class="box lg silver">Select an X.commerce </p>Attribute Set</div>
+    </td>
+        </tr>
+    </table>
 </div>
 <script type="text/javascript">
 //<![CDATA[
@@ -53,20 +103,18 @@ var tree;
 /**
  * Fix ext compatibility with prototype 1.6
  */
-Ext.lib.Event.getTarget = function(e) {
+Ext.lib.Event.getTarget = function (e) {
     var ee = e.browserEvent || e;
     return ee.target ? Event.element(ee) : null;
 };
 
-Ext.tree.TreePanel.Enhanced = function(el, config)
-{
+Ext.tree.TreePanel.Enhanced = function (el, config) {
     Ext.tree.TreePanel.Enhanced.superclass.constructor.call(this, el, config);
 };
 
 Ext.extend(Ext.tree.TreePanel.Enhanced, Ext.tree.TreePanel, {
 
-    loadTree : function(config, firstLoad)
-    {
+    loadTree:function (config, firstLoad) {
         var parameters = config['parameters'];
         var data = config['data'];
 
@@ -100,8 +148,7 @@ Ext.extend(Ext.tree.TreePanel.Enhanced, Ext.tree.TreePanel, {
         this.selectCurrentNode();
     },
 
-    request : function(url, params)
-    {
+    request:function (url, params) {
         if (!params) {
             var params = {};
         }
@@ -111,24 +158,22 @@ Ext.extend(Ext.tree.TreePanel.Enhanced, Ext.tree.TreePanel, {
         var result = new Ajax.Request(
             url + (url.match(new RegExp('\\?')) ? '&isAjax=true' : '?isAjax=true' ),
             {
-               parameters:  params,
-               method:      'post'
+                parameters:params,
+                method:'post'
             }
         );
 
         return result;
     },
 
-    selectCurrentNode : function()
-    {
+    selectCurrentNode:function () {
         if (this.currentNodeId) {
             var selectedNode = this.getNodeById(this.currentNodeId);
             this.getSelectionModel().select(selectedNode);
         }
     },
 
-    collapseTree : function()
-    {
+    collapseTree:function () {
         this.collapseAll();
         this.selectCurrentNode();
         if (!this.collapsed) {
@@ -136,16 +181,14 @@ Ext.extend(Ext.tree.TreePanel.Enhanced, Ext.tree.TreePanel, {
         }
     },
 
-    expandTree : function()
-    {
+    expandTree:function () {
         this.expandAll();
         if (this.collapsed) {
             this.collapsed = false;
         }
     },
 
-    categoryClick : function(node, e)
-    {
+    categoryClick:function (node, e) {
         this.currentNodeId = node.id;
         if (!this.currentNodeId.match('node-')) {
             $('mapping_product_type_id').writeAttribute('value', this.currentNodeId);
@@ -155,13 +198,11 @@ Ext.extend(Ext.tree.TreePanel.Enhanced, Ext.tree.TreePanel, {
     }
 });
 
-function reRenderTree()
-{
+function reRenderTree() {
     _renderNewTree();
 }
 
-function _renderNewTree(config)
-{
+function _renderNewTree(config) {
     if (!config) {
         var config = defaultLoadTreeParams;
     }
@@ -182,13 +223,12 @@ function _renderNewTree(config)
     }
 }
 
-Ext.onReady(function()
-{
+Ext.onReady(function () {
     categoryLoader = new Ext.tree.TreeLoader({
-       //dataUrl: '<?php //echo $this->getLoadTreeUrl() ?>'
+        //dataUrl: '<?php //echo $this->getLoadTreeUrl() ?>'
     });
 
-    categoryLoader.createNode = function(config) {
+    categoryLoader.createNode = function (config) {
         var node;
         var _node = Object.clone(config);
         if (config.children && !config.children.length) {
@@ -201,11 +241,10 @@ Ext.onReady(function()
         return node;
     };
 
-    categoryLoader.buildCategoryTree = function(parent, config)
-    {
+    categoryLoader.buildCategoryTree = function (parent, config) {
         if (!config) return null;
 
-        if (parent && config && config.length){
+        if (parent && config && config.length) {
             for (var i = 0; i < config.length; i++) {
                 var node;
                 var _node = Object.clone(config[i]);
@@ -224,13 +263,12 @@ Ext.onReady(function()
         }
     };
 
-    categoryLoader.buildHash = function(node)
-    {
+    categoryLoader.buildHash = function (node) {
         var hash = {};
 
         hash = this.toArray(node.attributes);
 
-        if (node.childNodes.length>0 || (!node.loaded && !node.loading)) {
+        if (node.childNodes.length > 0 || (!node.loaded && !node.loading)) {
             hash['children'] = new Array;
 
             for (var i = 0, len = node.childNodes.length; i < len; i++) {
@@ -244,8 +282,8 @@ Ext.onReady(function()
         return hash;
     };
 
-    categoryLoader.toArray = function(attributes) {
-        var data = {form_key: FORM_KEY};
+    categoryLoader.toArray = function (attributes) {
+        var data = {form_key:FORM_KEY};
         for (var key in attributes) {
             var value = attributes[key];
             data[key] = value;
@@ -254,40 +292,60 @@ Ext.onReady(function()
         return data;
     };
 
-    categoryLoader.on("beforeload", function(treeLoader, node) {
+    categoryLoader.on("beforeload", function (treeLoader, node) {
         treeLoader.baseParams.id = node.attributes.id;
         treeLoader.baseParams.form_key = FORM_KEY;
     });
 
-    categoryLoader.on("load", function(treeLoader, node, config) {
+    categoryLoader.on("load", function (treeLoader, node, config) {
         varienWindowOnload();
     });
 
 
     newTreeParams = {
-        animate         : false,
-        loader          : categoryLoader,
-        enableDD        : true,
-        containerScroll : true,
-        selModel        : new Ext.tree.DefaultSelectionModel(),
-        rootVisible     : false,
-        useAjax         : true,
-        currentNodeId   : <?php echo $this->getSelectedNodeId() ?>
+        animate:false,
+        loader:categoryLoader,
+        enableDD:true,
+        containerScroll:false,
+        selModel:new Ext.tree.DefaultSelectionModel(),
+        rootVisible:false,
+        useAjax:true,
+        currentNodeId: <?php echo $this->getSelectedNodeId() ?>
     };
 
     defaultLoadTreeParams = {
-        parameters : {
-            text  : 'Test Default',
-            draggable : false,
-            allowDrop : false,
-            id : 1,
-            expanded    : <?php echo (int) $this->getIsExpanded() ?>,
-            selected_node : <?php echo (int) $this->getSelectedNodeId() ?>
+        parameters:{
+            text:'Test Default',
+            draggable:false,
+            allowDrop:false,
+            containerScroll:false,
+            id:1,
+            expanded: <?php echo (int)$this->getIsExpanded() ?>,
+            selected_node: <?php echo (int)$this->getSelectedNodeId() ?>
         },
-        data : <?php echo $this->getTreeJson() ?>
+        data: <?php echo $this->getTreeJson() ?>
     };
 
     reRenderTree();
+
+    var filter = new Ext.tree.TreeFilter(tree);
+
+    var searchFilter = document.getElementById('product_type_search_filter');
+    /* searchFilter.focus();
+    */
+    searchFilter.onkeyup = function () {
+        var filterString = searchFilter.value;
+        //clear out previous filter
+        filter.clear();
+        tree.expandAll();
+        //make it case insensitive
+        var re = new RegExp(Ext.escapeRe(filterString), 'i');
+        //now, filter the tree by matching the regexp with the text of each node
+        //only filter out the node if it does not have any child node
+        filter.filterBy(function (n) {
+            return n.hasChildNodes() || re.test(n.text);
+        });
+    };
 });
 //]]>
 </script>

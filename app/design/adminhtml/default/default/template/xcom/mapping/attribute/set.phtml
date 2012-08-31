@@ -24,6 +24,7 @@
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
+
 /** @var $this Xcom_Mapping_Block_Adminhtml_Attribute_Set */
  ?>
 <div class="content-header">
@@ -36,11 +37,7 @@
         </tr>
     </table>
 </div>
-<p class="switcher"><label for="target_system_switcher"><?php echo $this->__('Mapping Target System') ?>:</label>
-    <select name="target_system_switcher" id="target_system_switcher" onchange="" style="min-width:120px;">
-        <option value="xcommerce" selected="selected"><?php echo $this->__('Xcommerce'); ?></option>
-    </select>
-</p>
+<?php echo $this->getBreadCrumb() ?>
 <div>
 <?php echo $this->getChildHtml('grid') ?>
 </div>

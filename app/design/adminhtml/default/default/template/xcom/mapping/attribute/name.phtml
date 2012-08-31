@@ -39,6 +39,9 @@
 <h4><?php echo $this->helper('xcom_mapping')->getAttributeSetBreadcrumb() ?></h4>
 <?php echo $this->getFormHtml() ?>
 <div>
+    <?php echo $this->getChildHtml('script') ?>
+</div>
+<div>
 <?php echo $this->getChildHtml('grid') ?>
 </div>
 <script type="text/javascript">

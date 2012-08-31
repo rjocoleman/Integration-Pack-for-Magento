@@ -124,6 +124,7 @@ class Xcom_Mapping_Model_Message_ProductTaxonomy_ProductType_Abstract_Response
             'name'              => $data['name'],
             'description'       => $data['description'],
             'product_class_ids' => $data['productClassIds'],
+            'status'            => Xcom_Mapping_Model_Product_Type::PRODUCT_TYPE_STATUS_UPDATED,
             'locale_code'       => $this->getLocaleCode()
         );
         $productType->addData($productTypeData)

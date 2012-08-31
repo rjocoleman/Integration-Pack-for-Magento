@@ -100,7 +100,17 @@ class Xcom_Xfabric_Model_Message_Request extends Xcom_Xfabric_Model_Message_Abst
     public function encode()
     {
         $this->_initSchema();
+
+        $messageData = new Varien_Object($this->getMessageData());
+
+        $beforeEncodeEventName = 'prepare_outbound_message_data_before_encode_'
+            . Mage::helper('xcom_xfabric')->getEventSuffix($this->getTopic());
+
+        Mage::dispatchEvent($beforeEncodeEventName, array('message_data' => $messageData));
+
+        $this->setMessageData($messageData->getData());
         $this->setBody($this->getMessageData());
+
         $this->getEncoder()->encode($this);
         return $this;
     }

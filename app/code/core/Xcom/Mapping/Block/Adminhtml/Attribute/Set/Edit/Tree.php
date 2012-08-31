@@ -43,8 +43,7 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Tree extends Mage_Core_Blo
     {
         if (empty($this->_productTypes)) {
             $productTypes = Mage::getModel('xcom_mapping/source_product_type')->toOptionArray();
-            $none = array(array('label' => $this->__('None'), 'value' => '-1', 'active-item' => true));
-            $this->_productTypes = array_merge($none, $productTypes);
+            $this->_productTypes = $productTypes;
         }
         return $this->_productTypes;
     }
@@ -85,14 +84,16 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Tree extends Mage_Core_Blo
             foreach ($node['value'] as $child) {
                 $item['children'][] = $this->_getNodeJson($child, $level+1);
             }
-        }
-
-        if (isset($node['active-item']) && $node['active-item']) {
             $item['cls'] = 'folder active-category';
-        } else {
-            $item['cls'] = 'folder no-active-category';
         }
-
+        else {
+            if ( $level == 0 ) {
+                $item['cls'] = 'folder no-active-category';
+            }
+            else {
+                $item['cls'] = 'folder active-category';
+            }
+        }
         if ($level < 1) {
             $item['expanded'] = true;
         }

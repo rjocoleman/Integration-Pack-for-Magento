@@ -33,6 +33,7 @@ class Xcom_Mapping_Model_Resource_Attribute_Collection extends Xcom_Mapping_Mode
     public function _construct()
     {
         $this->_init('xcom_mapping/attribute');
+
     }
 
     /**
@@ -45,6 +46,7 @@ class Xcom_Mapping_Model_Resource_Attribute_Collection extends Xcom_Mapping_Mode
     {
         $helper = Mage::helper('xcom_mapping');
         $select = $this->getSelect()->reset();
+        if ($attributeSetId != null)
         $select->from(array('ptr' => $this->getTable('xcom_mapping/product_type_relation')), array())
             ->join(array('mer' => $this->getTable('xcom_mapping/attribute_relation')),
                 'ptr.relation_product_type_id = mer.relation_product_type_id', array())
@@ -65,12 +67,37 @@ class Xcom_Mapping_Model_Resource_Attribute_Collection extends Xcom_Mapping_Mode
                 'mapping_attribute_name'    => new Zend_Db_Expr('IFNULL(' . $this->getEntityLocalNameExpr()
                     . ', \'' . $helper->__('Custom attribute') . '\')'),
                 'is_multiselect'            => 'main_table.is_multiselect',
+                'is_restricted'            => 'main_table.is_restricted',
+                'attribute_type'            => 'main_table.attribute_type'
+            ));
+        else
+            $select->from(array('ptr' => $this->getTable('xcom_mapping/product_type_relation')), array())
+                ->join(array('mer' => $this->getTable('xcom_mapping/attribute_relation')),
+                'ptr.relation_product_type_id = mer.relation_product_type_id', array())
+                ->join(array('eat' => $this->getTable('eav/attribute')), 'eat.attribute_id = mer.attribute_id', array())
+                ->joinLeft(array('main_table' => $this->getTable('xcom_mapping/attribute')),
+                'main_table.mapping_attribute_id = mer.mapping_attribute_id', array())
+                ->columns(array(
+                'attribute_set_id'          => 'ptr.attribute_set_id',
+                'mapping_product_type_id'   => 'ptr.mapping_product_type_id',
+                'attribute_id'              => 'eat.attribute_id',
+                'attribute_name'            => 'eat.frontend_label',
+                'attribute_type'            => 'eat.frontend_input',
+                'attribute_code'            => 'eat.attribute_code',
+                'mapping_attribute_id'      => 'main_table.mapping_attribute_id',
+                'relation_attribute_id'     => 'mer.relation_attribute_id',
+                'origin_attribute_id'       => 'main_table.attribute_id',
+                'mapping_attribute_name'    => new Zend_Db_Expr('IFNULL(' . $this->getEntityLocalNameExpr()
+                    . ', \'' . $helper->__('Custom attribute') . '\')'),
+                'is_multiselect'            => 'main_table.is_multiselect',
+                'is_restricted'            => 'main_table.is_restricted',
                 'attribute_type'            => 'main_table.attribute_type'
             ));
         $this->_joinLocaleTable();
         $this->setUniqueIdentifier('relation_attribute_id');
         return $this;
     }
+
 
     /**
      * Add to collection is attribute required column
@@ -80,8 +107,12 @@ class Xcom_Mapping_Model_Resource_Attribute_Collection extends Xcom_Mapping_Mode
     public function addIsAttributeRequiredColumn()
     {
         $select = $this->getConnection()->select()
-            ->from(array('mac' => $this->getTable('xcom_mapping/attribute_channel')), array())
+            ->from(array(
+                'mac' => $this->getTable('xcom_mapping/attribute_channel'),)
+             , array())
             ->where('is_required = 1')
+            ->join(array('channel' => $this->getTable('xcom_mapping/channel')),
+            'mac.channel_code=channel.channel_code and channel.is_enabled=1', array())
             ->group('mapping_attribute_id')
             ->columns(array(
                 'mapping_attribute_id',
@@ -92,6 +123,15 @@ class Xcom_Mapping_Model_Resource_Attribute_Collection extends Xcom_Mapping_Mode
         return $this;
     }
 
+    public function addAttributeIdField() {
+        $this->getSelect()->columns(array('attribute_id'));
+        return $this;
+    }
+
+    public function addIsRestrictedField() {
+        $this->getSelect()->columns(array('is_restricted'));
+        return $this;
+    }
     /**
      * Add to collection is attribute has mapped values
      *
@@ -120,6 +160,17 @@ class Xcom_Mapping_Model_Resource_Attribute_Collection extends Xcom_Mapping_Mode
     public function addSelectOnlyFilter()
     {
         $this->getSelect()->where('eat.frontend_input IN (\'select\', \'multiselect\')');
+        return $this;
+    }
+
+    /**
+     * Add filter for text codes
+     *
+     * @return Xcom_Mapping_Model_Resource_Attribute_Collection
+     */
+    public function addTextOnlyFilter()
+    {
+        $this->getSelect()->where('eat.frontend_input IN (\'text\')');
         return $this;
     }
 }

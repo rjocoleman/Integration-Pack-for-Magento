@@ -91,9 +91,11 @@ class Xcom_Chronicle_Model_Observer
                 $order = Mage::getModel('xcom_chronicle/message_order', array('order' => $shipment->getOrder()));
                 if ($order->isChannelOrder()) {
                     Mage::helper('xcom_xfabric')->send('com.x.ordermanagement.v2/ProcessSalesChannelOrder.MarketplaceOrder/MarketplaceOrderShipped', array('shipment' => $shipment));
+                    Mage::helper('xcom_xfabric')->send('com.x.ordermanagement.v2/ProcessSalesChannelOrder.MarketplaceOrder/MarketplaceObserveOrderShipped', array('shipment' => $shipment));
                 }
                 else {
                     Mage::helper('xcom_xfabric')->send('com.x.ordermanagement.v2/ProcessSalesChannelOrder/OrderShipped', array('shipment' => $shipment));
+                    Mage::helper('xcom_xfabric')->send('com.x.ordermanagement.v2/ProcessSalesChannelOrder/ObserveOrderShipped', array('shipment' => $shipment));
                 }
             }
         } catch (Exception $exception) {
@@ -623,7 +625,8 @@ class Xcom_Chronicle_Model_Observer
         }
     }
 
-    protected function _sendOfferMessages(Mage_Catalog_Model_Product $product, $performThoroughCheck = false)
+
+    protected function _sendOfferMessages(Mage_Catalog_Model_Product $product, $productDeleted = false)
     {
         if ($this->_isValueRegistered('xcom_offer_messages_sent', $product->getId())) {
             return;
@@ -633,7 +636,7 @@ class Xcom_Chronicle_Model_Observer
         $cancelledSids = array();
         $createdSids = array();
 
-        if ($performThoroughCheck || $product->getIsChangedWebsites()) {
+        if ($productDeleted || $product->getIsChangedWebsites()) {
             $oldWids = $this->_getRegisterValueForKey('xcom_offer_old_stores', $product->getId());
             if (!isset($oldWids)) {
                 $oldWids = array();
@@ -655,27 +658,20 @@ class Xcom_Chronicle_Model_Observer
 
         if ($product->dataHasChangedFor('price')) {
             foreach($updatedSids as $sid) {
-                $offerInputData = array('product'  => $product,
-                    'store_id' => $sid);
-
-                Mage::helper('xcom_xfabric')->send('com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferPriceUpdated', $offerInputData);
+                $this->_sendOfferMessage('com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferPriceUpdated', $product, $sid);
             }
         }
 
         if ($this->_isValueRegistered('xcom_inventory_updated', $product->getId())) {
             foreach($updatedSids as $sid) {
-                $offerInputData = array('product'  => $product,
-                    'store_id' => $sid);
-
-                Mage::helper('xcom_xfabric')->send('com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferQuantityUpdated', $offerInputData);
+                $this->_sendOfferMessage('com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferQuantityUpdated', $product, $sid);
             }
         }
 
         if ( $product->dataHasChangedFor('visibility')
             || $product->dataHasChangedFor('status') ) {
             foreach ($updatedSids as $sid) {
-                $offerInputData = array('product'  => $product, 'store_id' => $sid);
-                Mage::helper('xcom_xfabric')->send('com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferUpdated', $offerInputData);
+                $this->_sendOfferMessage('com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferUpdated', $product, $sid);
             }
         }
 
@@ -690,22 +686,59 @@ class Xcom_Chronicle_Model_Observer
         }
 
         foreach ($createdSids as $sid) {
-            $offerInputData = array('product'  => $product,
-                'store_id' => $sid);
-
-            Mage::helper('xcom_xfabric')->send('com.x.webstore.v1/WebStoreOfferCreation/WebStoreOfferCreated', $offerInputData);
+            $this->_sendOfferMessage('com.x.webstore.v1/WebStoreOfferCreation/WebStoreOfferCreated', $product, $sid);
         }
 
         foreach ($cancelledSids as $sid) {
             $storeProduct = $this->_getRegisterValueForKey('xcom_offer_old_stores_products', $product->getId() . '_' . $sid);
             if (empty($storeProduct)) {
-                $offerInputData = array('product'  => $product,
-                    'store_id' => $sid);
+                $this->_sendOfferMessage('com.x.webstore.v1/WebStoreOfferDeletion/WebStoreOfferDeleted', $product, $sid);
             } else {
-                $offerInputData = array('product'  => $storeProduct);
+                $this->_sendOfferMessage('com.x.webstore.v1/WebStoreOfferDeletion/WebStoreOfferDeleted', $storeProduct, null);
             }
 
-            Mage::helper('xcom_xfabric')->send('com.x.webstore.v1/WebStoreOfferDeletion/WebStoreOfferDeleted', $offerInputData);
+
+        }
+    }
+
+    protected function _sendOfferMessage($messageTopic, $product, $sid)
+    {
+        // Main product / parent product
+        $offerInputData = array(
+            'product'   => $product,
+            'store_id'  => $sid,
+        );
+        Mage::helper('xcom_xfabric')->send($messageTopic, $offerInputData);
+
+        // Special code to handle children of configurable products
+        if ($product->isConfigurable()) {
+            /** @var $configurableProduct Mage_Catalog_Model_Product_Type_Configurable */
+            $configurableProduct = $product->getTypeInstance(true);
+            $usedProducts = $configurableProduct->getUsedProducts(null, $product);
+
+            /** @var $childProduct  Mage_Catalog_Model_Product */
+            foreach ($usedProducts as $childProduct) {
+                $configurableAttributes = $childProduct->getAttributes();
+                $attributes = array();
+                /** @var $attribute Mage_Catalog_Model_Resource_Eav_Attribute */
+                foreach ($configurableAttributes as $attribute) {
+                    $attributeId = $attribute->getAttributeId();
+                    $attributeValue = $childProduct->getData($attribute->getAttributeCode());
+                    if (!empty($attributeId) && !empty($attributeValue)) {
+                        $attributes[$attributeId] = $attributeValue;
+                    }
+                }
+                // Need to clear options each loop
+                $product->setCustomOptions(array());
+                $product->addCustomOption('attributes', serialize($attributes));
+
+                $offerInputData = array(
+                    'product'       => $product,
+                    'store_id'      => $sid,
+                    'child_product'  => $childProduct,
+                );
+                Mage::helper('xcom_xfabric')->send($messageTopic, $offerInputData);
+            }
         }
     }
 
@@ -872,9 +905,10 @@ class Xcom_Chronicle_Model_Observer
                 if ($this->_isSupportedProductType($product)) {
                     foreach ($product->getStoreIds() as $storeId) {
                         $offerInputData = array('product'  => $product, 'store_id' => $storeId);
-                        Mage::helper('xcom_xfabric')->send(
+                        $this->_sendOfferMessage(
                             'com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferUpdated',
-                            $offerInputData
+                            $product,
+                            $storeId
                         );
                     }
                 }

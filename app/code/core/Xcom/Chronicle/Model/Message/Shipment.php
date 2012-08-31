@@ -77,7 +77,11 @@ class Xcom_Chronicle_Model_Message_Shipment extends Varien_Object
             'shippingMethod'       => $shipment->getOrder()->getShippingDescription(),
             'deliveryWindow'        => null,
             'shippingWindow'        => null,
-            'shippingMessage'       => null
+            'shippingMessage'       => null,
+            'packageDimensions'     => null, // optional @todo
+            'packageWeight'         => null, // optional @todo
+            'packageType'           => null, // optional @todo
+            'shippingIrregular'      => false // default to false - @todo
         );
 
         return $result;

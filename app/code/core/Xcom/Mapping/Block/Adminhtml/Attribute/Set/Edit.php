@@ -76,7 +76,7 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit extends Mage_Adminhtml_Blo
     {
         return $this->getRequest()->getParam('mapping_product_type_id')
                 ? $this->__('Edit Attribute Set Mapping')
-                : $this->__('New Attribute Set Mapping');
+                : $this->__('Attribute Set Mapping');
     }
 
     /**

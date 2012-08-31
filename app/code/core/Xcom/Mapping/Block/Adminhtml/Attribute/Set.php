@@ -33,8 +33,21 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set extends Mage_Adminhtml_Block_Wi
      */
     protected function _construct()
     {
-        $this->_headerText = $this->__('Manage Attribute Set Mapping');
+        $this->_headerText = $this->__(" Manage Attribute Mapping "
+);
         $this->_controller = 'adminhtml_map_attribute';
         parent::_construct();
+    }
+
+    public function getBreadCrumb() {
+
+        return   <<<HEADER
+Mapping the attributes ensures that your product can be marketed across multiple channels.
+<br>
+<br>
+ Click <b> "Map Now"</b> to start mapping your product attributes.<br>
+ Click <b> "Manage"</b> to edit or add an attribute or value mapping. <br>
+ Click <b> "Clear" </b> to remove all the attribute mappings. <br>
+HEADER;
     }
 }

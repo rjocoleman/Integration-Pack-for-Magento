@@ -31,7 +31,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Quantityupdated_Outbound exten
         parent::_construct();
         $this->_topic = 'com.x.webstore.v1/WebStoreOfferUpdate/WebStoreOfferQuantityUpdated';
         $this->_schemaRecordName = 'WebStoreOfferPriceUpdated';
-        $this->_schemaVersion = '1.0.0';
+        $this->_schemaVersion = "1.0.5";
     }
 
     /**
@@ -42,8 +42,12 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Quantityupdated_Outbound exten
     {
         /** @var $avroDataObject Xcom_Chronicle_Model_Message_Webstore_Offer */
         $avroDataObject = Mage::getModel('xcom_chronicle/message_webstore_offer',
-            array('product'  => $dataObject->getProduct(),
-                'store_id' => $dataObject->getStoreId()));
+            array(
+                'product'           => $dataObject->getProduct(),
+                'store_id'          => $dataObject->getStoreId(),
+                'child_product'      => $dataObject->getChildProduct(),
+            )
+        );
 
         $data = array(
             'sku'       => $avroDataObject->getSku(),

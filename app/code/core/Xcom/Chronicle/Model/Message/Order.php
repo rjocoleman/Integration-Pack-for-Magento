@@ -774,6 +774,10 @@ class Xcom_Chronicle_Model_Message_Order extends Varien_Object
             'deliveryWindow'        => null, // optional
             'shippingWindow'        => null, // optional
             'shippingMessage'       => null, // optional
+            'packageDimensions'     => null, // optional @todo
+            'packageWeight'         => null, // optional @todo
+            'packageType'           => null, // optional @todo
+            'shippingIrregular'      => false // default to false - @todo
         );
 
         return $data;

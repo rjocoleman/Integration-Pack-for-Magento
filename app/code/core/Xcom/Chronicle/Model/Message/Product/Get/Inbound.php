@@ -41,7 +41,7 @@ class Xcom_Chronicle_Model_Message_Product_Get_Inbound extends Xcom_Xfabric_Mode
     {
         $this->_topic               = 'com.x.pim.v1/ProductLookup/LookupProduct';
         $this->_schemaRecordName    = 'LookupProduct';
-        $this->_schemaVersion       = "1.0.0";
+        $this->_schemaVersion = '1.1.4';
 
         parent::_construct();
     }

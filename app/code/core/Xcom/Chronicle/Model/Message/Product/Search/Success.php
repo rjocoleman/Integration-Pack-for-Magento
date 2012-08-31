@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Product_Search_Success extends Xcom_Xfabric_M
         $this->_topic = 'com.x.pim.v1/ProductSearch/SearchProductSucceeded';
         $this->_schemaRecordName = 'SearchProductSucceeded';
         $this->_schemaFile = 'Xcom_Chronicle/OrderManagement.avpr';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_schemaVersion = '1.1.0';
     }
 
     /**

@@ -105,6 +105,18 @@ class Xcom_Mapping_Model_Resource_Attribute extends Xcom_Mapping_Model_Resource_
             ->where('rel.relation_product_type_id = ?', $relationProductTypeId);
         return $adapter->fetchOne($select);
     }
+
+    protected function _getMappingRelationId($relationProductTypeId, $attributeId)
+    {
+        $relationTable = $this->getTable('xcom_mapping/attribute_relation');
+        $adapter = $this->_getWriteAdapter();
+        $select = $adapter->select()
+            ->from(array('rel' => $relationTable), array('relation_attribute_id'))
+            ->where($attributeId ? 'rel.attribute_id = ?' : 'rel.mapping_attribute_id IS NULL',
+            $attributeId)
+            ->where('rel.relation_product_type_id = ?', $relationProductTypeId);
+        return $adapter->fetchOne($select);
+    }
     /**
      * Save relation
      *
@@ -134,6 +146,42 @@ class Xcom_Mapping_Model_Resource_Attribute extends Xcom_Mapping_Model_Resource_
     }
 
     /**
+     * given attributeSetId, return the RelationProductTypeId
+     * @param $attributeSetId
+     * @return the relationProductTypeId - can be used in further query
+     */
+    public function getRelationProductTypeId($attributeSetId )
+    {
+        $relationTable = $this->getTable('xcom_mapping/product_type_relation');
+        $adapter = $this->_getWriteAdapter();
+        $select = $adapter->select()
+            ->from(array('rel' => $relationTable), 'relation_product_type_id')
+            ->where('rel.attribute_set_id = ?', $attributeSetId);
+        $relationProductTypeId = $adapter->fetchOne($select);
+
+        return  $relationProductTypeId;
+    }
+
+    /**
+     * Given attributeSetId, return all attribute mapping for the attribute set
+     * @param $attributeSetId
+     * @return array of attribute_id, mapping_attribute and relation_attribute_id
+     */
+    public function getAttributeMapping($attributeSetId)
+    {
+        $relationProductTypeId = $this->getRelationProductTypeId($attributeSetId);
+
+        $relationTable = $this->getTable('xcom_mapping/attribute_relation');
+        $adapter = $this->_getWriteAdapter();
+        $select = $adapter->select()
+            ->from(array('rel' => $relationTable),
+            array('relation_attribute_id', 'mapping_attribute_id', 'attribute_id'))
+            ->where('rel.relation_product_type_id = ?', $relationProductTypeId);
+
+        $mappings = $adapter->fetchAll($select);
+        return $mappings;
+    }
+    /**
      * Get Relation Attribute Id
      *
      * @param $attributeSetId
@@ -143,14 +191,17 @@ class Xcom_Mapping_Model_Resource_Attribute extends Xcom_Mapping_Model_Resource_
      */
     public function getRelationAttributeId($attributeSetId, $attributeId, $mappingAttributeId)
     {
-        $relationTable = $this->getTable('xcom_mapping/product_type_relation');
-        $adapter = $this->_getWriteAdapter();
-        $select = $adapter->select()
-            ->from(array('rel' => $relationTable), 'relation_product_type_id')
-            ->where('rel.attribute_set_id = ?', $attributeSetId);
-        $relationProductTypeId = $adapter->fetchOne($select);
+        $relationProductTypeId = $this->getRelationProductTypeId($attributeSetId);
 
         $relationId = $this->_getRelationId($relationProductTypeId, $attributeId, $mappingAttributeId);
+        return $relationId;
+    }
+
+    public function getMappingRelationAttributeId($attributeSetId, $productTypeId, $attributeId)
+    {
+        $relationProductTypeId = $this->getRelationProductTypeId($attributeSetId);
+
+        $relationId = $this->_getMappingRelationId($relationProductTypeId, $attributeId);
         return $relationId;
     }
     /**
@@ -190,5 +241,86 @@ class Xcom_Mapping_Model_Resource_Attribute extends Xcom_Mapping_Model_Resource_
         }
         $select = $adapter->select()->union($union);
         return $adapter->fetchPairs($select);
+    }
+
+    /**
+     * save attribute locale information in attribute_locale table
+     * this function assumes that duplicate entry has been deleted
+     * @param $mappingAttributeId
+     * @param $name
+     * @param $description
+     * @param $localeCode
+     */
+    public function saveAttributeLocale($mappingAttributeId, $name,
+                                        $description, $localeCode)
+    {
+        $data = array(
+            'mapping_attribute_id' => $mappingAttributeId,
+            'name'                 => $name,
+            'description'          => $description,
+            'locale_code'          => $localeCode,
+        );
+
+        $adapter = $this->_getWriteAdapter();
+
+        $adapter->insertOnDuplicate(
+            $this->getTable('xcom_mapping/attribute_locale'), $data,
+            array('mapping_attribute_id', 'locale_code', 'name', 'description')
+        );
+    }
+
+    /**
+     * get attributes for a given product type. This function does not return
+     * locale related information
+     * @param $mappingProductTypeId
+     * @return array
+     */
+    public function getAttributesForProductType($mappingProductTypeId) {
+        $query = $this->getReadConnection()->select()
+            ->from(array('tr' => $this->getTable('xcom_mapping/attribute')), array())
+            ->where('tr.mapping_product_type_id = ?', $mappingProductTypeId)
+            ->columns(array(
+            'mapping_attribute_id' => 'tr.mapping_attribute_id',
+            'attribute_id' => 'tr.attribute_id',
+            'is_restricted' => 'tr.is_restricted'));
+        return $this->getReadConnection()->fetchAll($query);
+    }
+
+    /**
+     * @param $mappingAttributeId
+     * @return true if the attribute is required by any channel, false otherwise
+     */
+    public function isRequired($mappingAttributeId)
+    {
+        $query = $this->getReadConnection()->select()
+            ->from(array('mac' => $this->getTable('xcom_mapping/attribute_channel')), array())
+            ->where('mac.mapping_attribute_id = ?', $mappingAttributeId);
+
+        $queryChannel = $this->getReadConnection()->select()
+            ->from(array('channel' => $this->getTable('xcom_mapping/channel')), array())
+            ->where('channel.is_enabled = 1')
+            ->columns(array(
+                'channel_code' => 'channel_code',
+            ));
+
+        $queryJoined = $query->join(array('req' => new Zend_Db_Expr('(' . $queryChannel . ')')),
+            'req.channel_code = mac.channel_code', array('is_required' => new Zend_Db_Expr('MAX(mac.is_required)')));
+
+        return ($this->getReadConnection()->fetchOne($queryJoined) > 0);
+    }
+
+    public function getChannelInfo($mappingAttributeId)
+    {
+        $adapter   = $this->_getReadAdapter();
+        $select    = $adapter->select()
+            ->from(array('mac' => $this->getTable('xcom_mapping/attribute_channel')), array())
+            ->where('mac.mapping_attribute_id = ?', $mappingAttributeId)
+            ->columns(array(
+                'channel_code' => 'channel_code',
+                'is_required' => 'is_required',
+                'is_variation' => 'is_variation')
+            );
+
+        return $adapter->fetchAll($select);
     }
 }

@@ -31,7 +31,7 @@ class Xcom_Chronicle_Model_Message_Order_Created_Outbound extends Xcom_Xfabric_M
         parent::_construct();
         $this->_topic = 'com.x.ordermanagement.v2/ProcessSalesChannelOrder/OrderCreated';
         $this->_schemaRecordName = 'OrderCreated';
-        $this->_schemaVersion  = "2.2.8";
+        $this->_schemaVersion  = "2.2.13";
     }
 
     /**

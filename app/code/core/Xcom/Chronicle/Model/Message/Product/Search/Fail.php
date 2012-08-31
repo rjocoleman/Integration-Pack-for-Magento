@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Product_Search_Fail extends Xcom_Xfabric_Mode
         $this->_topic = 'com.x.pim.v1/ProductSearch/SearchProductFailed';
         $this->_schemaRecordName = 'SearchProductFailed';
         $this->_schemaFile = 'Xcom_Chronicle/OrderManagement.avpr';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_schemaVersion = '1.1.0';
     }
 
     /**

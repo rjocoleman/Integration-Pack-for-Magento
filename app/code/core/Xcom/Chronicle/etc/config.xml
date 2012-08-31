@@ -252,10 +252,18 @@
                             <name>com.x.ordermanagement.v2/ProcessSalesChannelOrder/OrderShipped</name>
                             <message>xcom_chronicle/message_order_shipped_outbound</message>
                         </order_saleschannel_shipped>
+                        <order_saleschannel_observe_shipped>
+                            <name>com.x.ordermanagement.v2/ProcessSalesChannelOrder/ObserveOrderShipped</name>
+                            <message>xcom_chronicle/message_order_shipped_observe_outbound</message>
+                        </order_saleschannel_observe_shipped>
                         <order_marketplace_shipped>
                             <name>com.x.ordermanagement.v2/ProcessSalesChannelOrder.MarketplaceOrder/MarketplaceOrderShipped</name>
                             <message>xcom_chronicle/message_order_marketplaceshipped_outbound</message>
                         </order_marketplace_shipped>
+                        <order_saleschannel_marketplace_observe_shipped>
+                            <name>com.x.ordermanagement.v2/ProcessSalesChannelOrder.MarketplaceOrder/MarketplaceObserveOrderShipped</name>
+                            <message>xcom_chronicle/message_order_shipped_marketplace_observe_outbound</message>
+                        </order_saleschannel_marketplace_observe_shipped>
                         <order_nonsensitive_search_success>
                             <name>com.x.ordermanagement.v2/OrderSearch.NonSensitive/SearchNonSensitiveOrderSucceeded</name>
                             <message>xcom_chronicle/message_order_nonsensitive_search_success</message>

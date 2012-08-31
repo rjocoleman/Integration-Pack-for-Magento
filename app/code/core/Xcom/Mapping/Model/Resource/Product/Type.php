@@ -188,7 +188,7 @@ class Xcom_Mapping_Model_Resource_Product_Type extends Xcom_Mapping_Model_Resour
             ->getSelect();
 
         $select = $this->_getReadAdapter()->select()
-            ->union(array($classesSelect, $typesSelect));
+            ->union(array($classesSelect, $typesSelect))->order('name');
 
         $result = $this->_getReadAdapter()->fetchAll($select);
 
@@ -223,5 +223,20 @@ class Xcom_Mapping_Model_Resource_Product_Type extends Xcom_Mapping_Model_Resour
                 'ptr.mapping_product_type_id = main_table.mapping_product_type_id', array())
             ->where('ptr.attribute_set_id = ?', $attributeSetId);
         return $this->_getReadAdapter()->fetchOne($select);
+    }
+
+    /**
+     * return all product type without locale information
+     */
+    public function getAllProductType() {
+        $select = $this->_getReadAdapter()->select()
+            ->from(array('tr' => $this->getTable('xcom_mapping/product_type')), array())
+            ->columns(array(
+            'mapping_product_type_id'   => 'tr.mapping_product_type_id',
+            'product_type_id'              => 'tr.product_type_id',
+            'status'              => 'tr.status',
+            'version'      => 'tr.version',
+            ));
+        return $this->_getReadAdapter()->fetchAll($select);
     }
 }

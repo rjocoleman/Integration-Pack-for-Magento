@@ -62,11 +62,21 @@ class Xcom_Xfabric_Block_Adminhtml_System_Config_Form_Fieldset_Renderer_Conditio
      *
      * @return Mage_Core_Model_Abstract
      */
-    public function getGroup()
+	/*  public function getGroup()
     {
         return isset($this->_groups[$this->_currentGroupName])
             ? $this->_groups[$this->_currentGroupName]
             : Mage::getModel('core/config_element');
+    }*/
+    /* In newest version of Magento (EE 1.12.0.2, CE 1.7.0.2, etc)
+     * we set group in fieldset (Mage_Adminhtml_Block_System_Config_Form, line 205),
+     * in older we set group in fieldsetRenderer
+     */
+    public function getGroup($fieldset = null)
+    {
+        return isset($this->_groups[$this->_currentGroupName])
+            ? $this->_groups[$this->_currentGroupName]
+            : $fieldset->getGroup();
     }
 
     /**
@@ -79,7 +89,8 @@ class Xcom_Xfabric_Block_Adminhtml_System_Config_Form_Fieldset_Renderer_Conditio
     public function render(Varien_Data_Form_Element_Abstract $fieldset)
     {
         $this->_currentGroupName = $fieldset->getLegend();
-        $group = $this->getGroup();
+        //$group = $this->getGroup();
+        $group = $this->getGroup($fieldset);
         $doRender = !empty($group) && isset($group->conditions);
 
         if ($doRender) {

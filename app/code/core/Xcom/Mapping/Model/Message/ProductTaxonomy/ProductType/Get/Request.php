@@ -51,7 +51,7 @@ class Xcom_Mapping_Model_Message_ProductTaxonomy_ProductType_Get_Request
     protected function _prepareData(Varien_Object $data = null)
     {
         $messageData = array(
-            'productTypeIds'    => null,
+            'productTypeIds'    => $data->getData('product_type_ids'),
             'locale'            => $this->_getLocaleRecord($data),
             'filter'            => $this->_getFilterRecord($data),
         );

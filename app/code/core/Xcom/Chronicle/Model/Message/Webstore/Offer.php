@@ -30,6 +30,11 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer extends Varien_Object
     private $_product;
     private $_storeId;
     private $_productId;
+    private $_sku;
+    private $_parentSku;
+    /** @var Mage_Catalog_Model_Product */
+    private $_childProduct;
+    private $_price;
 
     /**
      *
@@ -37,6 +42,10 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer extends Varien_Object
     public function __construct($params)
     {
         $this->_product = $params['product'];
+
+        // must calculate price here before store_id changes, caching attributes won't work.
+        $this->_price = $this->createPrice();
+
         if(array_key_exists('store_id', $params) && !empty($params['store_id'])) {
             $this->_storeId = $params['store_id'];
             $this->_product = Mage::getModel('catalog/product')
@@ -45,6 +54,16 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer extends Varien_Object
         } else {
             $this->_storeId = $this->_product->getStoreId();
         }
+
+        if(array_key_exists('child_product', $params) && !empty($params['child_product'])) {
+            $this->_childProduct = $params['child_product'];
+            $this->_sku = $this->_childProduct->getSku();
+            $this->_parentSku = $this->_product->getSku();
+        } else {
+            $this->_sku = $this->_product->getSku();
+            $this->_parentSku = null;
+        }
+
         $this->_productId = $this->_product->getId();
 
         $this->setData($this->_createOffer());
@@ -59,12 +78,18 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer extends Varien_Object
             'offerState'        => $this->_createState(),
             'url'               => $this->_getOfferUrl(),
             'sku'               => $this->getSku(),
-            'currentPrice'      => $this->createPrice(),
+            'parentSku'         => $this->getParentSku(),
+            'currentPrice'      => $this->_getPrice(),
             'quantity'          => $this->getQuantity(),
             'webStoreId'        => $this->getWebStoreId(),
             'categoryId'        => $this->_getCategoryIds(),
         );
         return $data;
+    }
+
+    protected function _getPrice()
+    {
+        return $this->_price;
     }
 
     public function getWebStoreId()
@@ -93,6 +118,10 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer extends Varien_Object
         // The offer id will consist of the base URL stripped of the schema and the store view id plus the product id.
         $formattedBase = preg_replace('/(.*)\:\/\/(.*?)((\/index\.php\/?$)|$|(\/index.php\/admin\/?))/is', '$2', Mage::getBaseUrl());
         $id = $formattedBase . '*' . $this->_storeId . '*' . $this->_productId;
+        // if this is a child product, we add the child SKU
+        if ($this->isChildProduct()) {
+            $id = $id . '*' . $this->_getChildProduct()->getSku();
+        }
         return $id;
     }
 
@@ -138,19 +167,39 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer extends Varien_Object
 
     public function getSku()
     {
-        return $this->_product->getSku();
+        return $this->_sku;
+    }
+
+    public function getParentSku()
+    {
+        return $this->_parentSku;
     }
 
     public function createPrice()
     {
         return array(
-            'amount'    => (string)$this->_product->getPrice(),
-            'code'      => Mage::app()->getStore($this->_storeId)->getBaseCurrencyCode(),
+            'amount'    => (string)$this->_product->getPriceModel()->getFinalPrice(1, $this->_product),
+            'code'      => $this->_product->getStore()->getBaseCurrencyCode(),
         );
     }
 
     public function getQuantity()
     {
-        return (int) Mage::getModel('cataloginventory/stock_item')->loadByProduct($this->_product->getId())->getQty();
+        return (int) Mage::getModel('cataloginventory/stock_item')
+            ->loadByProduct($this->_getChildProduct()->getId())->getQty();
+    }
+
+    /**
+     * Returns childProduct if set, otherwise returns product
+     * @return Mage_Catalog_Model_Product
+     */
+    protected function _getChildProduct()
+    {
+        return isset($this->_childProduct) ? $this->_childProduct : $this->_product;
+    }
+
+    private function isChildProduct()
+    {
+        return isset($this->_childProduct);
     }
 }

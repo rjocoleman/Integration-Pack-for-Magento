@@ -69,6 +69,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
             'description'       => array($this->_createLocalizedValue($product->getDescription())),
             'GTIN'              => $product->hasData('gtin') ?
                 $product->getAttributeText('gtin') : null,
+            'sku'               => $product->getSku(),
             'brand'             => !empty($brand) ?
                 array($this->_createLocalizedValue($brand)) : null,
             'manufacturer'      => !empty($manufacturer) ?
@@ -139,13 +140,28 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         $result = array();
 
         $mappedAttributeCodes = array();
+        $mappedAttributeOriginIds = array();
         $codeToName= array();
-        $mappingData = Mage::getModel('xcom_mapping/attribute')
-            ->getSelectAttributesMapping($product->getAttributeSetId());
+
+        $attributeMapping = Mage::getModel('xcom_mapping/attribute');
+        $mappingData = array_merge(
+            $attributeMapping->getSelectAttributesMapping($product->getAttributeSetId()),
+            $attributeMapping->getTextAttributesMapping($product->getAttributeSetId())
+        );
+
         foreach ($mappingData as $mappedData) {
            //Mage::log("mapped data: " . print_r($mappedData, true), null, 'debug.log', true);
             $mappedAttributeCodes[] = $mappedData['attribute_code'];
-            $codeToName[$mappedData['attribute_code']] = $mappedData['name'];
+            // if attribute is mapped as Custom Attribute
+            if ($mappedData['mapping_attribute_id'] == null) {
+                $attributeId = $mappedData['attribute_code'];
+                $name = $mappedData['attribute_name'];
+            } else {
+                $attributeId = $mappedData['origin_attribute_id'];
+                $name = $mappedData['name'];
+            }
+            $mappedAttributeOriginIds[] = $attributeId;
+            $codeToName[$attributeId] = $name;
         }
         //Mage::log("mappedAttributeCodes: " . print_r($mappedAttributeCodes, true), null, 'debug.log', true);
 
@@ -155,7 +171,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
             ->getMappingOptions($product);
 
         foreach ($mappingOptions as $key => $value) {
-            if(in_array($key, $mappedAttributeCodes)) {
+            if(in_array($key, $mappedAttributeOriginIds)) {
 //                Mage::log("mapping options: " . print_r($mappingOptions, true), null, 'debug.log', true);
                 $value = array(
                     'attributeId'       => $key,
@@ -171,7 +187,6 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         if(null === $attributes) {
             $attributes =  $product->getAttributes();
         }
-
 
         $attributeType = null;
         $attributeValue = null;
@@ -260,8 +275,10 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
                     }
                     $attributes = $this->_createAttributes($childProduct, $attributes);
 
-                    $base_skus[] = array( 'sku' => $childProduct->getSku(),
+                    $base_skus[] = array(
+                        'sku' => $childProduct->getSku(),
                         'attributes' => $attributes,
+                        'id'    => $childId,
                     );
 
                 }
@@ -289,7 +306,8 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         foreach ($skus as $node) {
             $sku = $node['sku'];
             $attributes = $node['attributes'];
-            $data[] = $this->_createSku($sku, $attributes);
+            $childId = isset($node['id']) ? $node['id'] : $product->getId();
+            $data[] = $this->_createSku($sku, $attributes, $childId);
         }
 
         return $data;
@@ -304,7 +322,7 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         );
     }
 
-    protected function _createSku($sku, $attributes = null)
+    protected function _createSku($sku, $attributes = null, $childId = null)
     {
 //        Mage::log('SKU: ' . $sku . '  Attributes: ' . print_r($attributes, true), null, 'debug.log', true);
         $variations = null;
@@ -315,9 +333,12 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
             }
         }
         $variations = empty($variations) ? null : array($variations);
+        if ($childId == null) {
+            $childId = $this->_product->getId();
+        }
         return array(
             'sku'                       => $sku,
-            'productId'                 => $this->_product->getId(),
+            'productId'                 => $childId,
             'MSRP'                      => null,
             'MAP'                       => null,
             'variationAttributeValues'  => $variations,
@@ -325,24 +346,25 @@ class Xcom_Chronicle_Model_Message_Product extends Varien_Object
         );
     }
 
-    private function _findAllSkus($stack, $skus = array(), $prefix = '', $attributes = array())
+    private function _findAllSkus($stack, $skus = array(), $prefix = '', $attributes = array(), $childId = null)
     {
 //        Mage::log("stack: " . print_r($stack, true) . " skus: " . print_r($skus, true) . "  prefix: {$prefix}", null, 'debug.log', true);
         $parts = array_shift($stack);
         if(null === $parts) {
-            $skus[] = array('sku' => $prefix, 'attributes' => $attributes);
+            $skus[] = array('sku' => $prefix, 'attributes' => $attributes, 'id' => $childId);
             return $skus;
         }
         foreach ($parts as $node) {
             $skuSegment = $node['sku'];
             $middle = (empty($prefix) || empty($skuSegment)) ? '' : '-';
             $curPrefix = $prefix . $middle . $skuSegment;
+            $childId = isset($node['id']) ? $node['id'] : $childId;
             if($node != null && array_key_exists('attributes', $node) && $node['attributes'] != null) {
                 $curAttributes = array_merge($attributes, $node['attributes']);
             } else {
                 $curAttributes = $attributes;
             }
-            $skus = $this->_findAllSkus($stack, $skus, $curPrefix, $curAttributes);
+            $skus = $this->_findAllSkus($stack, $skus, $curPrefix, $curAttributes, $childId);
         }
         return $skus;
     }

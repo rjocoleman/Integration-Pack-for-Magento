@@ -138,10 +138,14 @@ class Xcom_Xfabric_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function send($topic, array $dataObject = array())
     {
-        try {
-            $messageDataModel = Mage::getModel($topic, $dataObject);
-        } catch (Exception $e) {
+        if (strpos($topic, '_') !== false) {
             $messageDataModel = false;
+        } else {
+            try {
+                $messageDataModel = Mage::getModel($topic, $dataObject);
+            } catch (Exception $e) {
+                $messageDataModel = false;
+            }
         }
 
         if (!$messageDataModel) {
@@ -273,5 +277,14 @@ class Xcom_Xfabric_Helper_Data extends Mage_Core_Helper_Abstract
     public function getOntologyBaseUri()
     {
         return Mage::getStoreConfig('xfabric/connection_settings/ontology_server_uri');
+    }
+
+    /**
+     * Return canonized event name based on topic
+     * @param $topic
+     */
+    public function getEventSuffix($topic)
+    {
+        return strtolower(preg_replace('/\W/', '_', trim($topic, '/')));
     }
 }

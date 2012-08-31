@@ -33,6 +33,7 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Edit_Form extends Mage_Adminhtml_Bl
      * @var bool
      */
     protected $_requiredAttrExists = false;
+    protected $_autoMappingResult = array();
 
     public function __construct()
     {
@@ -47,162 +48,179 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Edit_Form extends Mage_Adminhtml_Bl
     protected function _prepareLayout()
     {
         parent::_prepareLayout();
-        Varien_Data_Form::getFieldsetElementRenderer()
+        $this
             ->setTemplate('xcom/mapping/widget/form/renderer/fieldset/element.phtml');
-        Varien_Data_Form::getFieldsetRenderer()
+        $this
             ->setTemplate('xcom/mapping/widget/form/renderer/fieldset.phtml');
         return $this;
     }
 
     /**
-     * Prepare attribute mapping form.
-     *
-     * @return Mage_Adminhtml_Block_Widget_Form
+     * @return mixed
      */
-    protected function _prepareForm()
+    public function getXcommerceAttributes()
     {
         $params = Mage::registry('current_params');
+        $productTypeId = $this->_getProductTypeId();
+        $xCommerceAttributes = Mage::getModel('xcom_mapping/attribute')->getXcommerceAttributes($productTypeId);
 
-        $form = new Varien_Data_Form(array(
-            'id'        => $this->getId(),
-            'action'    => $this->getUrl('*/*/save'),
-            'method'    => 'post')
-        );
-
-        $fieldset = $form->addFieldset('settings', array(
-            'legend' => $this->__('Attribute Mapping Settings')
-        ));
-
-        $fieldset->addType('select_with_size',
-            Mage::getConfig()->getBlockClassName('xcom_mapping/form_element_select'));
-
-        $form->addData($params->getData());
-
-        $fieldset->addField('attribute_set_id', 'hidden', array(
-            'name'      => 'attribute_set_id',
-            'value'     => $params->getAttributeSetId()
-        ));
-
-        $fieldset->addField('mapping_product_type_id', 'hidden', array(
-            'name'      => 'mapping_product_type_id',
-            'value'     => $params->getMappingProductTypeId()
-        ));
-        $fieldset->addField('attributes', 'note', array(
-            'text'      => '<tr>'
-        ));
-
-        $fieldset->addField('attribute_id', 'select_with_size', array(
-            'label'     => $this->__('Magento Attribute'),
-            'title'     => $this->__('Magento Attribute'),
-            'name'      => 'attribute_id',
-            'size'      => 10,
-            'required'  => true,
-            'value_class' => 'select-div',
-            'style'     => 'width:320px;height:150px',
-            'class'     => 'required-entry select validate-select',
-            'no_span'   => false,
-            'values'    => $this->getAttributesOptionArray($params->getAttributeSetId())
-        ));
-
-        $fieldset->addField('mapping_attribute_id', 'select_with_size', array(
-            'label'     => $this->__('X.commerce Attribute'),
-            'title'     => $this->__('X.commerce Attribute'),
-            'name'      => 'mapping_attribute_id',
-            'size'      => 10,
-            'required'  => true,
-            'value_class' => 'select-div',
-            'class'     => 'required-entry select validate-select',
-            'style'     => 'width:320px;height:150px',
-            'no_span'   => false,
-            'values'    => $this->_getMappingAttributesOptionArray(),
-            'required_attr_exists' => $this->getRequiredAttrExists(),
-        ));
-
-        $widgetButtonStyle = $this->getRequiredAttrExists() ? 'position:relative;left:125px;top:-35px'
-            : 'position:relative;left:125px;';
-        $button = $this->getLayout()->createBlock('adminhtml/widget_button')
-            ->setData(array(
-                'label'     => $this->__('Add Attribute Mapping'),
-                'onclick'   => 'editForm.submit()',
-                'class'     => 'save',
-                'style'     => $widgetButtonStyle
-            ));
-
-        $fieldset->addField('button', 'note', array(
-            'value_class' => 'button-div',
-            'text'      => $button->toHtml()
-        ));
-
-        $form->setUseContainer(true);
-        $this->setForm($form);
-
-        return parent::_prepareForm();
+        return $xCommerceAttributes;
     }
 
     /**
-     * Returns attributes by attribute set
+     * @param $attribute
+     * @return string
+     */
+    public function getLiId($attribute)
+    {
+        return json_encode($attribute);
+    }
+
+
+    public function getClearMappingUrl() {
+        $clearUrl = $this->getUrl('*/mapping_attribute/clearAttributeMapping',array('isAjax' => true, '_current' => true) );
+        return $clearUrl;
+    }
+
+
+    public function getSaveMappingUrl() {
+        $url = $this->getUrl('*/mapping_attribute/saveAttributeMapping', array('isAjax' => true,'_current' => true));
+        return $url;
+    }
+
+    public function getUpdateMappingUrl() {
+        $url = $this->getUrl('*/mapping_attribute/updateAttributeMapping', array('isAjax' => true,'_current' => true));
+        return $url;
+    }
+
+    public function createNewAttrUrl() {
+        return $this->getUrl('*/mapping_attribute/createNewAttr', array('isAjax' => true,'_current' => true));
+    }
+
+    /**
+     * Returns Mapped Magento attributes by attribute set
      *
      * @param int $attributeSetId
      * @return array
      */
-    public function getAttributesOptionArray($attributeSetId)
+    public function getMappedMagentoAttributes()
     {
-        $relation = Mage::getModel('xcom_mapping/relation');
-        $options = array();
-        $collection = Mage::getResourceModel('catalog/product_attribute_collection')
-            ->addVisibleFilter()
-            ->setAttributeSetFilter($attributeSetId)
-            ->addStoreLabel(Mage_Core_Model_App::ADMIN_STORE_ID)
-            ->addFilter('is_user_defined', 1)
-            ->unshiftOrder('frontend_label', Varien_Data_Collection::SORT_ORDER_ASC);
-        $relation->addFilterOnlyMappedAttributes($collection, $attributeSetId);
+        $params = Mage::registry('current_params');
+        $attributeSetId = $params->getAttributeSetId();
+        $mappingProductTypeId = $this->_getProductTypeId();
+        $mappedMagentoAttributes = Mage::getModel('xcom_mapping/attribute')->getMappedMagentoAttributes($attributeSetId, $mappingProductTypeId);
 
-        foreach ($collection as $item) {
-            $options[] = array(
-                'value' => $item->getAttributeId(),
-                'label' => sprintf($item->getFrontendLabel())
-            );
-        }
-        return $options;
+        return $mappedMagentoAttributes;
     }
 
     /**
-     * Retrieve attributes by product type.
+     * Returns UnMapped Magento attributes by attribute set
      *
+     * @param int $attributeSetId
      * @return array
      */
-    protected function _getMappingAttributesOptionArray()
+    public function getUnMappedMagentoAttributes()
     {
         $params = Mage::registry('current_params');
-        $options = array(
-            array(
-                'value' => -1,
-                'label' => 'Custom Attribute',
-                'style' => 'color: grey'
+        $attributeSetId = $params->getAttributeSetId();
+        $mappingProductTypeId = $this->_getProductTypeId();
+        $unMappedMagentoAttributes = Mage::getModel('xcom_mapping/attribute')->getUnMappedMagentoAttributes($attributeSetId, $mappingProductTypeId);
 
-            ),
+        return $unMappedMagentoAttributes;
+    }
+
+    public function getMappedXcomAttributes()
+    {
+        $mappedMagAttrs = $this->getMappedMagentoAttributes();
+        $params = Mage::registry('current_params');
+        $productTypeId = $this->_getProductTypeId();
+        $attributeSetId = $params->getAttributeSetId();
+        $ret = Mage::getModel('xcom_mapping/attribute')->getMappedXcomAttributes($attributeSetId,$productTypeId,$mappedMagAttrs);
+        return $ret;
+    }
+
+    public function getUnmappedXcomAttributes()
+    {
+        $mappedMagAttrs = $this->getMappedMagentoAttributes();
+        $params = Mage::registry('current_params');
+        $productTypeId = $this->_getProductTypeId();
+        $attributeSetId = $params->getAttributeSetId();
+        $attr = Mage::getModel('xcom_mapping/attribute')->getUnmappedXcomAttributes($attributeSetId,$productTypeId,$mappedMagAttrs);
+
+        return $attr;
+    }
+
+   /*
+    * color red if it is a required attribute
+    */
+
+    public function _colorRedIfRequired($theItem, $isRequired){
+
+        $myoptions    = array(
+            'value' => $theItem->getId(),
+            'label' => sprintf("%s %s", $theItem->getName(),  $isRequired),
+            'style' => $isRequired ? 'color:red;' : ''
         );
-        $relation = Mage::getModel('xcom_mapping/relation');
-        /** @var $collection Xcom_Mapping_Model_Resource_Attribute_Collection */
-        $collection = Mage::getResourceModel('xcom_mapping/attribute_collection')
-            ->addFilter('mapping_product_type_id', $params->getMappingProductTypeId())
-            ->addIsAttributeRequiredColumn()
-            ->setOrder('is_required', Varien_Data_Collection_Db::SORT_ORDER_DESC)
-            ->setOrder('name', Varien_Data_Collection_Db::SORT_ORDER_ASC);
-        $relation->addFilterOnlyMappedMappingAttributes($collection, $params->getAttributeSetId());
-        foreach ($collection as $item) {
-            /** @var $item Xcom_Mapping_Model_Target_Attribute_Name */
-            $isRequired         = $item->getIsRequired() ? ' *' : '';
-            /* turn on the flag if we have any required attributes */
-            if ($item->getIsRequired()) {
-                $this->setRequiredAttrExists(true);
+        return $myoptions;
+    }
+
+    public function getAutoValueMappings()
+    {
+        $params = Mage::registry('current_params');
+        $attributeSetId = $params->getAttributeSetId();
+        $mappingProductTypeId = $this->_getProductTypeId();
+
+        //for each pair of magento-xcommerce attribute, create an array of value mapping
+        $helper = Mage::helper('xcom_mapping');
+        $mappingHelper = Mage::helper('xcom_mapping/mapper');
+        $magAttributes = $helper->getAttributes($attributeSetId);
+        $mappingAttributes = $helper->getProductTypeAttributes($attributeSetId, $mappingProductTypeId);
+
+        $valueMapping = array();
+        foreach ( $magAttributes as $magAttribute ) {
+            if (!in_array($magAttribute['frontend_input'], array('select', 'multiselect'))) {
+                //auto value mapping only applies to select attributes
+                continue;
             }
-            $options[]    = array(
-                'value' => $item->getId(),
-                'label' => sprintf("%s %s", $item->getName(),  $isRequired),
-                'style' => $isRequired ? 'color:red;' : ''
-            );
+            $magAttributeId = $magAttribute['attribute_id'];
+            $valueMapping[$magAttributeId] = array();
+            foreach ( $mappingAttributes as $mappingAttribute) {
+                $mappingAttributeId = $mappingAttribute['mapping_attribute_id'];
+                $matchingValues = $mappingHelper->matchAttributeValueAsHash(
+                    $magAttributeId,
+                    $mappingAttributeId);
+                if ( count($matchingValues)> 0 ) {
+                    $valueMapping[$magAttributeId][$mappingAttributeId] = $matchingValues;
+                }
+            }
         }
-        return $options;
+        return json_encode($valueMapping);
+    }
+
+    public function getDataModel() {
+
+        return Mage::helper('xcom_mapping/mapper')->getDataModel();
+    }
+
+    public function setAutoMappingResult($result) {
+        $this->_autoMappingResult = $result;
+    }
+    public function getAutoMappingResult() {
+        return $this->_autoMappingResult;
+    }
+
+    private function _getProductTypeId() {
+        $ret = null;
+        $params = Mage::registry('current_params');
+        $attributeSetId = $params->getAttributeSetId();
+        $mappingProductTypeId = $params->getMappingProductTypeId();
+        if ($mappingProductTypeId == null) {
+               $ret = Mage::getModel('xcom_mapping/product_type')
+                ->getResource()->getMappingProductTypeId($attributeSetId);
+        }
+        else {
+            $ret = $mappingProductTypeId;
+        }
+        return $ret;
     }
 }

@@ -34,7 +34,7 @@ class Xcom_Xfabric_Adminhtml_XfabricController extends Mage_Adminhtml_Controller
             /* @var $authorizationModel Xcom_Xfabric_Model_Authorization */
             $authorizationModel = Mage::getModel('xcom_xfabric/authorization');
             $destinationId = $authorizationModel->load()->getDestinationId();
-            Mage::helper('xcom_xfabric')->send('xcom_xfabric/message_ping_request',
+            Mage::helper('xcom_xfabric')->send('message/ping',
                 array('destination_id' => $destinationId));
             $this->_getSession()->addSuccess($this->__('Connection succeeded.'));
         } catch (Exception $e) {

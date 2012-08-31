@@ -25,6 +25,9 @@
  */
 class Xcom_Mapping_Model_Product_Type extends Mage_Core_Model_Abstract
 {
+    const PRODUCT_TYPE_STATUS_PENDING_UPDATE    = 1;
+    const PRODUCT_TYPE_STATUS_UPDATED    = 2;
+
     /**
      * Init resource model
      *

@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Get_Success extends Xcom_Xfabric_Mod
         $this->_topic = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllWebStoreSucceeded';
         $this->_schemaRecordName = 'GetAllWebStoreSucceeded';
         $this->_schemaFile = 'Xcom_Chronicle/com.x.webstore.v1.avpr';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_schemaVersion = "1.0.5";
     }
 
     /**

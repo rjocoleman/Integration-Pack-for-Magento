@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Category_Getall_Inbound extends Xcom
     {
         $this->_topic               = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllCategory';
         $this->_schemaRecordName    = 'GetAllCategory';
-        $this->_schemaVersion       = "1.0.0";
+        $this->_schemaVersion       = "1.0.5";
 
         parent::_construct();
     }

@@ -45,7 +45,10 @@ class Xcom_Mapping_Helper_Data extends Mage_Catalog_Helper_Data
             $productTypeName = $this->getProductTypeName($mappingProductTypeId);
         }
 
-        return $this->__('Attribute Set: %s ~ %s',
+        $noticePart1 = $this->__('Match your product attributes with equivalent X.commerce attributes. Highlight an attribute on the left, then click the corresponding X.commerce attribute on the right.');
+        $noticePart2 = $this->__('Hover your cursor over an X.commerce attribute to see its associated values. Click the "+" icon to automatically create that attribute in Magento.');
+        $AttributeText = "Attribute Set: ";
+        return $noticePart1 . "<br />" . $noticePart2 . "<br /> <br />" . $this->__($AttributeText ."<b>". '%s ' . "<td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>". ' %s',
             $this->getAttributeSetName($attributeSetId), $productTypeName);
     }
 
@@ -56,7 +59,14 @@ class Xcom_Mapping_Helper_Data extends Mage_Catalog_Helper_Data
 
     public function getMappingProductTypeId()
     {
-        return (int) Mage::app()->getRequest()->getParam('mapping_product_type_id');
+        $attributeSetId =   (int) Mage::app()->getRequest()->getParam('attribute_set_id');
+        $ret = (int) Mage::app()->getRequest()->getParam('mapping_product_type_id');
+        if ($ret == null) {
+            $ret = Mage::getModel('xcom_mapping/product_type')
+                ->getResource()->getMappingProductTypeId($attributeSetId);
+        }
+
+        return $ret;
     }
 
     /**
@@ -223,4 +233,65 @@ class Xcom_Mapping_Helper_Data extends Mage_Catalog_Helper_Data
             ->getByAttributeId($attributeId);
         return $attributeValues ? $attributeValues : false;
     }
+
+    /**
+     * get attributes in an attributeset that are eligible for attribute mapping
+     * @param $attributeSetId
+     * @return mixed
+     */
+    public function getAttributes($attributeSetId)
+    {
+        $collection = Mage::getResourceModel('catalog/product_attribute_collection')
+            ->addVisibleFilter()
+            ->setAttributeSetFilter($attributeSetId)
+            ->addStoreLabel(Mage_Core_Model_App::ADMIN_STORE_ID)
+            ->addFilter('is_user_defined', 1);
+        return $collection->getData();
+    }
+
+    /**
+     * find the attributes in the product type
+     * @param $attributeSetId
+     * @param $productTypeId
+     * @return array
+     */
+    public function getProductTypeAttributes($attributeSetId, $productTypeId)
+    {
+        $relation = Mage::getModel('xcom_mapping/relation');
+        /** @var $collection Xcom_Mapping_Model_Resource_Attribute_Collection */
+        $collection = Mage::getResourceModel('xcom_mapping/attribute_collection')
+            ->addFilter('mapping_product_type_id', $productTypeId);
+        return $collection->getData();
+    }
+
+
+    /**
+     * return predefined values for a product type attribute
+     * @param $ptAttribute
+     * @return mixed
+     */
+    public function getProductTypeAttributeValues($mappingAttributeId) {
+        $values = array();
+        $attrValueCollection = Mage::getResourceModel('xcom_mapping/attribute_value_collection')
+            ->addFilter('mapping_attribute_id', $mappingAttributeId);
+        foreach ($attrValueCollection->getItems() as $item) {
+            $attribute = Mage::getModel('xcom_mapping/attribute_value')->load($item->getMappingValueId());
+            $values[$item->getMappingValueId()] =  $attribute->getName();
+        }
+        return $values;
+    }
+
+    /**
+     * @param $attributeId
+     * @return mixed options for attribute {3=>'New', 4=>'Used'}
+     */
+    public function getMageAttributeOptions($attributeId) {
+        $mappingHelper = Mage::helper('xcom_mapping');
+        return $mappingHelper->getAttributeOptionsHash($attributeId);
+    }
+
+
+
+
+
 }

@@ -37,13 +37,13 @@
         </tr>
     </table>
 </div>
-<h4><?php echo $this->getBreadcrumb() ?></h4>
+<!--h4><!--?php echo $this->getBreadcrumb() ?></h4-->
 <?php echo $this->getChildHtml('form'); ?>
 <script type="text/javascript">
 //<![CDATA[
     var attributeSetTemplateSyntax = /(^|.|\r|\n)({{(\w+)}})/;
     var attributeSetForm = new varienForm('attributeSetForm');
-    function setSettings(urlNoAction, urlSave,  targetElement)
+    function setSettings(urlNoAction, urlSave,  targetElement, auto_map)
     {
         var srcValue = $F('mapping_product_type_id_src');
         if (!srcValue.empty() && (srcValue != $F(targetElement))) {
@@ -55,7 +55,7 @@
         if (attributeSetForm.validate()) {
             if ($F('mapping_product_type_id_src') != $F(targetElement)) {
                 var template = new Template(urlSave, attributeSetTemplateSyntax);
-                setLocation(template.evaluate({mapping_product_type_id:$F(targetElement)}));
+                setLocation(template.evaluate({mapping_product_type_id:$F(targetElement), auto_map:$F(auto_map)}));
             } else {
                 setLocation(urlNoAction);
             }

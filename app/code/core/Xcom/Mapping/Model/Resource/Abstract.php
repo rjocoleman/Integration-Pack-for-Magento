@@ -89,7 +89,12 @@ abstract class Xcom_Mapping_Model_Resource_Abstract extends Mage_Core_Model_Mysq
         $tables = $select->getPart(Zend_Db_Select::FROM);
         $table  = $tables[$this->getMainTable()];
         if ($table) {
-            $localeCode = $object->getResource()->getLocaleCode();
+            if ( $object->getLocaleCode() != null ) {
+                $localeCode = $object->getLocaleCode();
+            }
+            else {
+                $localeCode = $object->getResource()->getLocaleCode();
+            }
             if ($localeCode == null) {
                 $localeCode = $this->_localeCode;
             }

@@ -25,7 +25,7 @@
  */
 
 class Xcom_Mapping_Model_Message_ProductTaxonomy_ProductType_Get_Succeeded
-    extends Xcom_Mapping_Model_Message_ProductTaxonomy_ProductType_Abstract_Response
+    extends Xcom_Mapping_Model_Message_ProductTaxonomy_ProductType_Response
 {
     protected function _construct()
     {

@@ -33,7 +33,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Search_Inbound extends Xcom_Xf
     {
         $this->_topic               = 'com.x.webstore.v1/WebStoreOfferSearch/SearchWebStoreOffer';
         $this->_schemaRecordName    = 'SearchWebStoreOffer';
-        $this->_schemaVersion       = "1.0.0";
+        $this->_schemaVersion = "1.0.5";
 
         parent::_construct();
     }
@@ -64,19 +64,19 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Search_Inbound extends Xcom_Xf
         }
         try {
             if ($this->_validateSchema()) {
-                    $searchResults = $this->_processSearchQuery($data);
-                    $response = array(
-                        'webStoreOffers'  => $searchResults['results'],
-                        'totalItemsFound' => $searchResults['totalItemsFound'],
-                        'request'         => array(
-                            'webStoreId'     => $data['webStoreId'],
-                            'modifiedSince'  => $data['modifiedSince'],
-                            'itemsRequested' => $data['itemsRequested'],
-                            'startItemIndex' => $data['startItemIndex'],
-                        ),
-                        'destination_id'  => $this->getPublisherPseudonym(),
-                        'correlation_id'  => $this->getCorrelationId(),
-                    );
+                $searchResults = $this->_processSearchQuery($data);
+                $response = array(
+                    'webStoreOffers'  => $searchResults['results'],
+                    'totalItemsFound' => $searchResults['totalItemsFound'],
+                    'request'         => array(
+                        'webStoreId'     => $data['webStoreId'],
+                        'modifiedSince'  => $data['modifiedSince'],
+                        'itemsRequested' => $data['itemsRequested'],
+                        'startItemIndex' => $data['startItemIndex'],
+                    ),
+                    'destination_id'  => $this->getPublisherPseudonym(),
+                    'correlation_id'  => $this->getCorrelationId(),
+                );
 
                 Mage::helper('xcom_xfabric')->send('com.x.webstore.v1/WebStoreOfferSearch/SearchWebStoreOfferSucceeded', $response);
             }
@@ -105,6 +105,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Search_Inbound extends Xcom_Xf
      */
     protected function _processSearchQuery(&$data)
     {
+        /** @var $products Mage_Catalog_Model_Resource_Product_Collection */
         $products = Mage::getResourceModel('catalog/product_collection');
         $products->setOrder('created_at', 'asc');
 
@@ -136,24 +137,36 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Search_Inbound extends Xcom_Xf
         $added = 0;
         $skippedCount = 0;
         $results = array();
+        $done = false;
 
         foreach ($products as $product) {
-            $p = Mage::getModel('catalog/product')->load((int)$product->getId());
+            if ($done) {
+                break;
+            }
+            $product = Mage::getModel('catalog/product')
+                ->load((int)$product->getId());
 
-            foreach ($p->getStoreIds() as $sid) {
+            foreach ($product->getStoreIds() as $sid) {
+                if ($done) {
+                    break;
+                }
                 if (isset($webStoreId) && $webStoreId != $sid) {
                     continue;
                 }
 
-                $total++;
-                if (isset($offset) && $skippedCount < $offset) {
-                    $skippedCount++;
-                    continue;
-                } else{
-                    if (!isset($limit) || $added < $limit) {
+                $potentialOffers = $this->_getOfferModels($product, $sid);
+                foreach ($potentialOffers as $offer) {
+                    $total++;
+                    if (isset($offset) && $skippedCount < $offset) {
+                        $skippedCount++;
+                        continue;
+                    } else if (!isset($limit) || $added < $limit) {
                         $added++;
-                        $results[] = Mage::getModel('xcom_chronicle/message_webstore_offer',
-                                                    array('product'  => $product, 'store_id' => $sid))->toArray();
+                        $results[] = $offer;
+                    } else {
+                        // Done, hit the limit
+                        $done = true;
+                        break;
                     }
                 }
             }
@@ -163,6 +176,51 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Search_Inbound extends Xcom_Xf
             'results' => $results,
             'totalItemsFound' => $total
         );
+    }
+
+    protected function _getOfferModels($product, $sid)
+    {
+        $results = array();
+        // Main product / parent product
+        $offerInputData = array(
+            'product'   => $product,
+            'store_id'  => $sid,
+        );
+        $results[] = Mage::getModel('xcom_chronicle/message_webstore_offer',
+            $offerInputData)->toArray();
+
+        // Special code to handle children of configurable products
+        if ($product->isConfigurable()) {
+            /** @var $configurableProduct Mage_Catalog_Model_Product_Type_Configurable */
+            $configurableProduct = $product->getTypeInstance(true);
+            $usedProducts = $configurableProduct->getUsedProducts(null, $product);
+
+            /** @var $childProduct  Mage_Catalog_Model_Product */
+            foreach ($usedProducts as $childProduct) {
+                $configurableAttributes = $childProduct->getAttributes();
+                $attributes = array();
+                /** @var $attribute Mage_Catalog_Model_Resource_Eav_Attribute */
+                foreach ($configurableAttributes as $attribute) {
+                    $attributeId = $attribute->getAttributeId();
+                    $attributeValue = $childProduct->getData($attribute->getAttributeCode());
+                    if (!empty($attributeId) && !empty($attributeValue)) {
+                        $attributes[$attributeId] = $attributeValue;
+                    }
+                }
+                // Need to clear options each loop
+                $product->setCustomOptions(array());
+                $product->addCustomOption('attributes', serialize($attributes));
+
+                $offerInputData = array(
+                    'product'       => $product,
+                    'store_id'      => $sid,
+                    'child_product'  => $childProduct,
+                );
+                $results[] = Mage::getModel('xcom_chronicle/message_webstore_offer',
+                    $offerInputData)->toArray();
+            }
+        }
+        return $results;
     }
 
     protected function _generate_failure_data($modifiedSince, $itemsRequested, $startItemIndex, $webStoreId, $ex, $code=null)

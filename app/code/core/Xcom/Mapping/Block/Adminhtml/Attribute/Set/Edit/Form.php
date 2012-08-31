@@ -38,21 +38,26 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Form extends Mage_Adminhtm
             'action' => $this->getUrl('*/*/saveSet'),
             'method' => 'post'
         ));
-        $fieldset = $form->addFieldset('settings', array(
-            'legend' => $this->__('Attribute Set Mapping Settings'
-        )));
 
         $attributeSet = $this->getAttributeSet();
 
-        $fieldset->addField('attribute_set', 'label',
-            array(
-                'label' => $this->__('Magento Attribute Set'),
-                'title' => $this->__('Magento Attribute Set'),
-                'name' => 'attribute_set',
-                'value' => $this->__('Target Attribute Set'),
-                'after_element_html'    => '&nbsp;<span class="required">*</span>'
-            )
-        );
+
+        $fieldset = $form->addFieldset('settings', array(
+            'legend' => $this->__('Mapping Magento attribute set "' . $attributeSet->getAttributeSetName() .'"
+            to X.commerce attribute set'
+        )));
+
+        $fieldset->addType('note', 'Xcom_Mapping_Block_Form_Element_Note');
+
+//        $fieldset->addField('search', 'label', array(
+//                'title' => 'search',
+//                'name' => 'search',
+//                'label' => 'Use the search tool to find an attribute set that most closely
+//                matches your product. Enter a keyword to find a match more quickly'
+//                //Enter a keyword to search quickly.
+//            )
+//        );
+
 
         $mappingProductTypeId = $this->getRequest()->getParam('mapping_product_type_id');
         $fieldset->addField('mapping_product_type_id_src', 'hidden', array(
@@ -60,20 +65,32 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Form extends Mage_Adminhtm
             'value' => $mappingProductTypeId,
         ));
 
-        $fieldset->addField('attribute_set_id', 'hidden', array(
+        $fieldset->addField('attribute_set_id', 'note', array(
             'name' => 'attribute_set_id',
             'required' => true,
             'value' => $attributeSet->getId(),
         ));
 
+
         $fieldset->addField('target_attribute_set_tree', 'note', array(
-            'label' => $attributeSet->getAttributeSetName(),
+            //'label' => $attributeSet->getAttributeSetName(),
             'title' => $attributeSet->getAttributeSetName(),
-            'text'  => $this->getChildHtml('target_attribute_set_tree'),
+            'label'  => $this->getChildHtml('target_attribute_set_tree'),
         ));
 
+        $fieldset->addField('auto_map', 'note', array(
+            'title'     => 'Auto Map',
+            'label'     =>"<input  type=\"checkbox\" id=\"auto_map\" checked=\"checked\"/>
+            Auto Map (Matches the attributes and automatically maps them)",
+//            'text'     => 'Auto Map (Automatically find attributes that match your selection)',
+            'onclick'   => 'this.label = this.checked ? 1 :0;',
+
+        ));
+
+
         $fieldset->addField('continue_button', 'note', array(
-            'text' => $this->getChildHtml('continue_button'),
+            'label' => $this->getChildHtml('continue_button'),
+
         ));
 
         $form->setUseContainer(true);
@@ -107,8 +124,8 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Form extends Mage_Adminhtm
         $this->getLayout()->createBlock('adminhtml/widget_button')
             ->setData(array(
                 'label'     => $this->__('Continue'),
-                'onclick'   => sprintf("setSettings('%s', '%s', '%s')",
-                    $this->getNoActionUrl(), $this->getSaveUrl(), 'mapping_product_type_id'),
+                'onclick'   => sprintf("setSettings('%s', '%s', '%s', '%s')",
+                    $this->getNoActionUrl(), $this->getSaveUrl(), 'mapping_product_type_id', 'auto_map'),
                 'class'     => 'save'
             )));
 
@@ -138,7 +155,8 @@ class Xcom_Mapping_Block_Adminhtml_Attribute_Set_Edit_Form extends Mage_Adminhtm
     {
         return $this->getUrl('*/*/saveSet', array(
             '_current'  => true,
-            'mapping_product_type_id' => '{{mapping_product_type_id}}'
+            'mapping_product_type_id' => '{{mapping_product_type_id}}',
+            'auto_map' => '{{auto_map}}'
         ));
     }
 }

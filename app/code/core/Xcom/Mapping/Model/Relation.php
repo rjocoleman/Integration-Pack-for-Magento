@@ -83,19 +83,19 @@ class Xcom_Mapping_Model_Relation extends Mage_Core_Model_Abstract
         $attributeType       = Mage::helper('xcom_mapping')->getAttributeType($attributeId);
 
         $bind = array();
-        for ($i = 0; isset($values['attribute_value_' . $i]); $i++) {
-            if (!empty($values['target_attribute_value_' . $i])) {
+        for ($i = 0; isset($values[$i]['attribute_value']); $i++) {
+            if (!empty($values[$i]['target_attribute_value'])) {
                 $row = array(
                     'relation_attribute_id' => $relationAttributeId,
                     'value_id'              => null,
                     'hash_value'            => null);
                 if (in_array($attributeType, array('varchar', 'text', 'int', 'decimal'))) {
-                    $row['hash_value'] = $values['attribute_value_' . $i];
+                    $row['hash_value'] = $values[$i]['attribute_value'];
                 } else {
-                    $row['value_id'] = $values['attribute_value_' . $i];
+                    $row['value_id'] = $values[$i]['attribute_value'];
                 }
-                $row['mapping_value_id'] = ($values['target_attribute_value_' . $i] == self::DIRECT_MAPPING) ? null :
-                    $values['target_attribute_value_' . $i];
+                $row['mapping_value_id'] = ($values[$i]['target_attribute_value'] == self::DIRECT_MAPPING) ? null :
+                    $values[$i]['target_attribute_value'];
                 $bind[] = $row;
             }
         }
@@ -109,6 +109,22 @@ class Xcom_Mapping_Model_Relation extends Mage_Core_Model_Abstract
             throw Mage::exception("Mage_Core", $e->getMessage());
         }
         return $this;
+    }
+
+    /**
+     * check whether relation between attribute set and product type already exists
+     * @param $attributeSetId
+     * @param $productTypeId
+     * @return boolean
+     */
+    public function isAttributeSetMappingExist($attributeSetId, $productTypeId)
+    {
+        if ( $attributeSetId == null || $productTypeId == null ) {
+            return false;
+        }
+        $existingMappedProductTypeId = Mage::getModel('xcom_mapping/product_type')
+            ->getResource()->getMappingProductTypeId($attributeSetId);
+        return ( $existingMappedProductTypeId == $productTypeId);
     }
 
     /**
@@ -128,6 +144,7 @@ class Xcom_Mapping_Model_Relation extends Mage_Core_Model_Abstract
     {
         $productTypeId      = ($productTypeId == self::DIRECT_MAPPING) ? null : $productTypeId;
         $mappingAttributeId = ($mappingAttributeId == self::DIRECT_MAPPING) ? null : $mappingAttributeId;
+        $isAttributeSetMappingExist = $this->isAttributeSetMappingExist($attributeSetId, $productTypeId);
 
         $this->getResource()->beginTransaction();
         try {
@@ -143,13 +160,15 @@ class Xcom_Mapping_Model_Relation extends Mage_Core_Model_Abstract
             $this->getResource()->rollBack();
             throw Mage::exception("Mage_Core", $e->getMessage());
         }
-        Mage::dispatchEvent('save_mapping_relation', array(
-            'relation_product_type_id'  => $relationProductTypeId,
-            'attribute_set_id'          => $attributeSetId,
-            'mapping_product_type_id'   => $productTypeId,
-            'attribute_id'              => $attributeId,
-            'mapping_attribute_id'      => $mappingAttributeId
-        ));
+        if ( !$isAttributeSetMappingExist ) {
+            Mage::dispatchEvent('save_mapping_relation', array(
+                'relation_product_type_id'  => $relationProductTypeId,
+                'attribute_set_id'          => $attributeSetId,
+                'mapping_product_type_id'   => $productTypeId,
+                'attribute_id'              => $attributeId,
+                'mapping_attribute_id'      => $mappingAttributeId
+            ));
+        }
         return $this;
     }
 

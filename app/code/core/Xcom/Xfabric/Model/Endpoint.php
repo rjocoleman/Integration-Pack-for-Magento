@@ -102,7 +102,16 @@ class Xcom_Xfabric_Model_Endpoint
         }
         $options = $this->_messageData->getOptions();
         $topic = $options['topic'];
-        $messageData = $this->_messageData->getMessageData();
+
+        $beforeEncodeEventName = 'prepare_outbound_message_data_before_encode_'
+            . Mage::helper('xcom_xfabric')->getEventSuffix($topic);
+
+        $messageObject = new Varien_Object($this->_messageData->getMessageData());
+
+        Mage::dispatchEvent($beforeEncodeEventName, array('message_data' =>
+            $messageObject));
+
+        $messageData = $messageObject->getData();
 
         $messageBody = $this->_encoder->encodeText($messageData, $this->_schema->getRawSchema());
         $messageOptions = array(

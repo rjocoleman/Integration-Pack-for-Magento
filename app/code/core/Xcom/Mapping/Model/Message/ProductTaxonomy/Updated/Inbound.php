@@ -42,6 +42,7 @@ class Xcom_Mapping_Model_Message_ProductTaxonomy_Updated_Inbound extends Xcom_Xf
      */
     public function process()
     {
+        parent::process();
         $data = $this->getBody();
         if (!isset($data['version'])) {
             return $this;
@@ -61,7 +62,7 @@ class Xcom_Mapping_Model_Message_ProductTaxonomy_Updated_Inbound extends Xcom_Xf
      */
     public function getOutboundTopics()
     {
-        return array('productTaxonomy/get', 'productTaxonomy/productType/get');
+        return array('productTaxonomy/get');
     }
 
     /**

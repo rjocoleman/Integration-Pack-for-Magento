@@ -31,7 +31,7 @@ class Xcom_Chronicle_Model_Message_Order_Return_Partial_Outbound extends Xcom_Xf
         parent::_construct();
         $this->_topic = 'com.x.ordermanagement.v2/ProcessSalesChannelOrder/PartialOrderReturn';
         $this->_schemaRecordName = 'PartialOrderReturn';
-        $this->_schemaVersion  = "2.2.8";
+        $this->_schemaVersion  = "2.2.13";
     }
 
     /**

@@ -31,7 +31,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Created_Outbound extends Xcom_
         parent::_construct();
         $this->_topic = 'com.x.webstore.v1/WebStoreOfferCreation/WebStoreOfferCreated';
         $this->_schemaRecordName = 'WebStoreOfferCreated';
-        $this->_schemaVersion = '1.0.0';
+        $this->_schemaVersion = "1.0.5";
     }
 
     /**
@@ -41,8 +41,12 @@ class Xcom_Chronicle_Model_Message_Webstore_Offer_Created_Outbound extends Xcom_
     public function _prepareData(Varien_Object $dataObject = null)
     {
         $avroDataObject = Mage::getModel('xcom_chronicle/message_webstore_offer',
-            array('product'  => $dataObject->getProduct(),
-                'store_id' => $dataObject->getStoreId()));
+            array(
+                'product'           => $dataObject->getProduct(),
+                'store_id'          => $dataObject->getStoreId(),
+                'child_product'      => $dataObject->getChildProduct(),
+            )
+        );
 
         $data = array(
             'offer'       => $avroDataObject->toArray(),

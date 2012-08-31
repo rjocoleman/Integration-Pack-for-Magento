@@ -65,7 +65,7 @@ class Xcom_Mapping_Model_Resource_Attribute_Value extends Xcom_Mapping_Model_Res
         $select = $adapter->select();
         $select->from($this->getMainTable())
                ->where('mapping_attribute_id = ?', (int)$mappingAttributeId);
-        return $adapter->fetchRow($select);
+        return $adapter->fetchAll($select);
     }
 
     /**
@@ -92,5 +92,48 @@ class Xcom_Mapping_Model_Resource_Attribute_Value extends Xcom_Mapping_Model_Res
             $object->setChannelCodes(explode(',', $channelCodes));
         }
         return parent::_beforeSave($object);
+    }
+
+    /** 
+     * delete attribute value from attribute_value_locale table by id and locale
+     * @param array $mappingValueIds
+     * @param $localeCode
+     * @return Xcom_Mapping_Model_Resource_Attribute_Value
+     */
+    public function deleteByIdsAndLocale(array $mappingValueIds, $localeCode)
+    {
+        $adapter = $this->_getWriteAdapter();
+
+        $where = array(
+            'mapping_value_id' . ' IN (?)' => $mappingValueIds,
+            'locale_code = (?)' => $localeCode
+        );
+
+        $adapter->delete($this->getTable('xcom_mapping/attribute_value_locale'),
+            $where);
+
+        return $this;
+    }
+
+    /**
+     * save a record in attribute_value_locale table, assuming duplicate entry
+     * has been deleted
+     * @param $mappingValueId
+     * @param $localizedName
+     * @param $localeCode
+     */
+    public function saveAttributeValueLocale($mappingValueId, $localizedName,
+                                             $localeCode )
+    {
+        $localeData = array(
+            'mapping_value_id'  => $mappingValueId,
+            'name'                 => $localizedName,
+            'locale_code'           => $localeCode,
+        );
+
+        $adapter = $this->_getWriteAdapter();
+        $adapter->insertOnDuplicate($this->getTable('xcom_mapping/attribute_value_locale'),
+            $localeData
+        );
     }
 }

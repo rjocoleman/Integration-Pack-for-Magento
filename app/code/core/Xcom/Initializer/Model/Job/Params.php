@@ -75,7 +75,7 @@ class Xcom_Initializer_Model_Job_Params extends Mage_Core_Model_Abstract
      */
     public function createTaxonomyMessages()
     {
-        $hardcodedTopics = array("productTaxonomy/get", "productTaxonomy/productType/get");
+        $hardcodedTopics = array("productTaxonomy/get");
         $locales = array(
             array('country' => 'US',  'language'=> 'en'),
             array('country' => 'GB',  'language'=> 'en'),

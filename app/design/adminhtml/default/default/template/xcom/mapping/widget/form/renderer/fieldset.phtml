@@ -4,6 +4,7 @@
  *
  * NOTICE OF LICENSE
  *
+ *
  * This source file is subject to the Magento Enterprise Edition License
  * that is bundled with this package in the file LICENSE_EE.txt.
  * It is also available through the world-wide-web at this URL:
@@ -24,39 +25,1370 @@
  * @license     http://www.magentocommerce.com/license/enterprise-edition
  */
 ?>
-<?php $_element = $this->getElement() ?>
-<?php if ($_element->getFieldsetContainerId()): ?>
-<div id="<?php echo $_element->getFieldsetContainerId(); ?>">
-<?php endif; ?>
-<?php if ($_element->getLegend()): ?>
-<div class="entry-edit-head">
-    <h4 class="icon-head head-edit-form fieldset-legend"><?php echo $_element->getLegend() ?></h4>
-    <div class="form-buttons"><?php echo $_element->getHeaderBar() ?></div>
-</div>
-<?php endif; ?>
-<?php if (!$_element->getNoContainer()): ?>
-    <div class="fieldset <?php echo $_element->getClass() ?>" id="<?php echo $_element->getHtmlId() ?>">
-<?php endif; ?>
-    <div class="hor-scroll">
-        <?php if ($_element->getComment()): ?>
-            <p class="comment"><?php echo $this->escapeHtml($_element->getComment()) ?></p>
-        <?php endif; ?>
-        <?php if ($_element->hasHtmlContent()): ?>
-            <?php echo $_element->getHtmlContent(); ?>
-        <?php else: ?>
-<!--        <table cellspacing="0" class="--><?php //echo $_element->hasTableClass() ? $_element->getTableClass() : 'form-list'?><!--">-->
-<!--            <tbody>-->
-<!--            <tr>-->
-                <?php echo $_element->getChildrenHtml(); ?>
-<!--            </tr>-->
-<!--            </tbody>-->
-<!--        </table>-->
-        <?php endif; ?>
+<script type="text/javascript">
+var $j = jQuery.noConflict();
+var xcommerceValueMappings = <?php echo $this->getAutoValueMappings(); ?>;
+var xcomUnMappedAttrJson = <?php echo json_encode($this->getUnmappedXcomAttributes(), JSON_FORCE_OBJECT); ?>;
+var xcomMappedAttrJson = <?php echo json_encode($this->getMappedXcomAttributes(), JSON_FORCE_OBJECT);  ?>;
+var magentoUnmappedAttrJson = <?php echo json_encode($this->getUnMappedMagentoAttributes(), JSON_FORCE_OBJECT); ?>;
+var magentoMappedAttrJson = <?php echo json_encode($this->getMappedMagentoAttributes(), JSON_FORCE_OBJECT); ?>;
+var autoMappingResult = <?php echo json_encode($this->getAutoMappingResult(), JSON_FORCE_OBJECT); ?>;
+
+function parseXcommerceAttrId(xcommerceAttrElemId) {
+    // in the form of xcomattrid_$mappingAttributeId
+    return xcommerceAttrElemId.split('_')[1];
+}
+
+function parseMagentoAttrId(magentoAttrElemId) {
+    // in the form of magentoattrid_$attrId
+    return magentoAttrElemId.split('_')[1];
+}
+
+function createXcommerceAttrElemId(mappingAttrId) {
+    return 'xcomattrid_' + mappingAttrId;
+}
+
+function createMagentoAttrElemId(attrId) {
+    return 'magentoattrid_' + attrId;
+}
+
+function getInnerText(el) {
+    return el.textContent || el.innerText;
+}
+
+$j(function () {
+    var moveLeft = 20;
+    var moveDown = 10;
+
+    $j("a.pop").live({
+        mouseenter:function () {
+            var attrValueHoveredwithAsterisk = getInnerText(this);
+            var xcomAttrId = parseXcommerceAttrId(this.parentElement.id);
+
+            if (xcomAttrId != -1) {
+                var xcommerceAttr = xcomUnMappedAttrJson[xcomAttrId];
+                var readOnly = xcommerceAttr['isRestricted'];
+                var hoveredValues = xcommerceAttr['attrvalues'];
+                var attrValueHovered = xcommerceAttr['label'];
+
+                $j("#pop-text").text('');
+                var valuesText = '';
+                var i = 0;
+                if (readOnly != 1) {
+//                    valuesText += "No default value";
+//                    valuesText += "<br>";
+                    i++;
+                }
+
+                for (var key in hoveredValues) {
+                    if (i == 7) {
+                        valuesText += " . . . ";
+                        break;
+                    }
+                    valuesText += hoveredValues[key];
+                    valuesText += "<br>";
+                    i++;
+                }
+
+                var attrText = "X.commerce: " + attrValueHovered;
+                if (i == 1) {
+                    //attrText += " (Empty)";
+                }  else if (readOnly == 1) {
+                    attrText += " (Restricted Values)";
+                }  else {
+                    attrText += " (Recommended Values)";
+                }
+
+                $j("#pop-title").text(attrText);
+                $j("#pop-text").html(valuesText);
+                $j('div#pop-up').show();
+            }
+        },
+        mouseleave:function () {
+            $j('div#pop-up').hide();
+        },
+        mousemove:function (e) {
+            $j("div#pop-up").css('top', e.pageY + moveDown).css('left', e.pageX + moveLeft);
+        }
+    });
+
+    $j("a.mag-pop").live({
+        mouseenter:function () {
+            // Get the attribute name and modify list
+            attrValueHoveredwithAsterisk = getInnerText(this);
+            attrValueHovered = attrValueHoveredwithAsterisk.split("*")[0];
+            //hoveredIdx = $j.inArray(attrValueHovered, xcommerceAttrKeys);
+            var magentoAttrId = parseMagentoAttrId(this.parentElement.id);
+
+            if (magentoAttrId != -1) {
+                var magentoAttr = magentoUnmappedAttrJson[magentoAttrId];
+                var hoveredValues = magentoAttr['attrvalues'];
+                var attrType = magentoAttr['attrtype'];
+
+                $j("#mag-pop-text").text('');
+                var valuesText = '';
+                var i = 0;
+                if (attrType == "select") {
+                    for (var key in hoveredValues) {
+                        if (i == 7) {
+                            valuesText += " . . . ";
+                            break;
+                        }
+                        valuesText += hoveredValues[key];
+                        valuesText += "<br>";
+                        i++;
+                    }
+                } else {
+                    valuesText = "Values will be passed through 'as-is'";
+                }
+
+                var attrText = "Magento: " + attrValueHovered;
+                $j("#mag-pop-title").text(attrText);
+                $j("#mag-pop-text").html(valuesText);
+                $j('div#mag-pop-up').show();
+            }
+            else {
+                $j("#mag-pop-text").text('');
+                var valuesText = 'No default value';
+
+                var attrText = "Magento Values for " + attrValueHovered;
+                $j("#mag-pop-title").text(attrText);
+                $j("#mag-pop-text").html(valuesText);
+                $j('div#mag-pop-up').show();
+            }
+        },
+        mouseleave:function () {
+            $j('div#mag-pop-up').hide();
+        },
+        mousemove:function (e) {
+            $j("div#mag-pop-up").css('top', e.pageY + moveDown).css('left', e.pageX + moveLeft);
+        }
+    });
+});
+
+$j(function () {
+    $j("#tabs_magento").tabs();
+    $j("#tabs_commerce").tabs();
+
+    $j("#tabs_values_2").tabs();
+    $j("#tabs_values_3").tabs();
+});
+
+$j(function () {
+    var $tab_title_input = $j("#tab_title"),
+        $tab_content_input = $j("#tab_content");
+    var tab_counter = 2;        // modal dialog init: custom buttons and a "close" callback reseting the form inside
+    var $dialog = $j("#dialog").dialog({
+        autoOpen:false,
+        modal:true,
+        buttons:{
+            Cancel:function () {
+                $j(this).dialog("close");
+            },
+            Create:function () {
+                $j(this).dialog("create");
+                // get selected value
+                var attrValueSelected = $j("#dialog_select option:selected").text();
+                if (attrValueSelected.length == 0) {
+                    // try to get value from combobox
+                    attrValueSelected = $j("#auto-input").val();
+                }
+                // check if apply all checkbox is clicked
+                applyAll = $j('#dialog_checkbox').is(':checked');
+
+                $dialog.dialog("close");
+                create_new_mapping(attrValueSelected, applyAll);
+            }
+        },
+        open:function () {
+            $tab_title_input.focus();
+        },
+        close:function () {
+
+        },
+
+        create:function () {
+
+        }
+    });
+
+    // addTab form: calls addTab function on submit and closes the dialog
+    var $form = $j("form", $dialog).submit(function () {
+        $dialog.dialog("close");
+        return false;
+    });
+
+
+    // close icon: removing the tab on click
+    // note: closable tabs gonna be an option in the future - see http://dev.jqueryui.com/ticket/3924
+    $j("#tabs span.ui-icon-close").live("click", function () {
+        var index = $j("li", $tabs).index($j(this).parent());
+        $tabs.tabs("remove", index);
+    });
+});
+
+function autoclear() {
+    var auto_input = $j('#auto-input');
+    if (auto_input.val() == "Please select a value or enter one.") {
+        auto_input.val('');
+        auto_input.autocomplete("search", "");
+    }
+    else {
+        auto_input.autocomplete("search", auto_input.val());
+    }
+    auto_input.focus();
+}
+
+
+(function ($) {
+    $.widget("ui.combobox", {
+        _create:function () {
+            var input,
+                self = this,
+                select = this.element.hide(),
+                selected = select.children(":selected"),
+                value = selected.val() ? selected.text() : "",
+                wrapper = this.wrapper = $("<span>")
+                    .addClass( "ui-combobox" )
+                    .insertAfter(select);
+
+            input = $("<input id='auto-input' onclick='autoclear();'>")
+                .appendTo(wrapper)
+                .val(value)
+                .addClass("ui-combobox-input")
+                .autocomplete({
+                    delay:0,
+                    minLength:0,
+                    source:function (request, response) {
+                        var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
+                        response(select.children("option").map(function () {
+                            var text = $(this).text();
+                            if (this.value && ( !request.term || matcher.test(text) ))
+                                return {
+                                    label:text.replace(
+                                        new RegExp(
+                                            "(?![^&;]+;)(?!<[^<>]*)(" +
+                                                $.ui.autocomplete.escapeRegex(request.term) +
+                                                ")(?![^<>]*>)(?![^&;]+;)", "gi"
+                                        ), "<strong>$1</strong>"),
+                                    value:text,
+                                    option:this
+                                };
+                        }));
+                    },
+                    select:function (event, ui) {
+                        ui.item.option.selected = true;
+                        self._trigger("selected", event, {
+                            item:ui.item.option
+                        });
+                    },
+                    change:function (event, ui) {
+                        if (!ui.item) {
+                            var matcher = new RegExp("^" + $.ui.autocomplete.escapeRegex($(this).val()) + "$", "i"),
+                                valid = false;
+                            select.children("option").each(function () {
+                                if ($(this).text().match(matcher)) {
+                                    this.selected = valid = true;
+                                    return false;
+                                }
+                            });
+                            /*
+                            if (!valid) {
+                                // remove invalid value, as it didn't match anything
+                                $(this).val("");
+                                select.val("");
+                                input.data("autocomplete").term = "";
+                                return false;
+                            }
+                            */
+                        }
+                    }
+                });
+
+            input.data("autocomplete")._renderItem = function (ul, item) {
+                return $("<li></li>")
+                    .data("item.autocomplete", item)
+                    .append("<a>" + item.label + "</a>")
+                    .appendTo(ul);
+            };
+        },
+
+        destroy:function () {
+            this.wrapper.remove();
+            this.element.show();
+            $.Widget.prototype.destroy.call(this);
+        }
+    });
+})(jQuery);
+
+$j(function () {
+    $j("#combobox").combobox();
+});
+
+$j(function () {
+    //add notice message about auto mapping
+    var completeAttrs = ""
+    for (var key in autoMappingResult) {
+        if (magentoMappedAttrJson[key] != null) {
+            completeAttrs += magentoMappedAttrJson[key]['label'];
+            completeAttrs += ",";
+        }
+    }
+    if (completeAttrs.length > 0) {
+        completeAttrs = completeAttrs.slice(0, completeAttrs.length - 1)
+        addNoticeMsg("Completed attribute mapping and moved " + completeAttrs
+            + " to Mapped tab");
+    }
+})
+function addNoticeMsg(msg) {
+    //can only have one message at a time
+    var mappingNoticeMsgId = "mappingNoticeMsgId";
+    var newMsg = $j("<li></li>").append($j("<span>" + msg + "</span>"));
+    newMsg.attr('id', mappingNoticeMsgId);
+
+    var existingMappingNoticeMsg = $j("#" + mappingNoticeMsgId);
+    if (existingMappingNoticeMsg.length != 0) {
+        var parentElem = $j(existingMappingNoticeMsg[0]).parent();
+        existingMappingNoticeMsg.remove();
+        parentElem.append(newMsg);
+        return;
+    }
+    var messages = $j('#messages');
+    var messages_ul = messages.children('ul');
+    if (messages_ul.length == 0) {
+        messages_ul = $j("<ul></ul>").addClass("messages");
+        messages.append(messages_ul);
+    }
+
+    var noticeMessages = messages_ul.children('li').filter(".notice-msg");
+    if (noticeMessages.length == 0) {
+        noticeMessages = $j("<li></li>").addClass("notice-msg");
+        messages_ul.append(noticeMessages);
+    }
+
+    var noticeMessages_ul = null;
+    if (noticeMessages.children('ul').length == 0) {
+        noticeMessages_ul = $j("<ul></ul>");
+        noticeMessages.append(noticeMessages_ul);
+    }
+    else {
+        noticeMessages_ul = $j(noticeMessages.children('ul')[0]);
+    }
+
+    noticeMessages_ul.append(newMsg);
+}
+function fillTabs(attributes, msg) {
+    xcomMappedAttrJson = attributes[0];
+    xcomUnMappedAttrJson = attributes[1];
+    magentoMappedAttrJson = attributes[2];
+    magentoUnmappedAttrJson = attributes[3];
+    fillMappedXcomTab();
+    fillUnmappedXcomTab();
+    fillMappedMagentoTab();
+    fillUnmappedMagentoTab();
+
+    if (msg != null) {
+        addNoticeMsg(msg);
+    }
+}
+
+function timeoutHandler(html) {
+    var timeout = html.ajaxExpired;
+    var redirect = html.ajaxRedirect;
+
+    if (timeout) {
+        window.location.reload();
+        return true;
+    }
+
+    return false;
+}
+
+function fillUnmappedXcomTab() {
+    var html = '';
+    for (var key in xcomUnMappedAttrJson) {
+        if (xcomUnMappedAttrJson[key]['value'] == '-1') {
+            // custom attribute
+            html = html + '<li id=\"' + createXcommerceAttrElemId(key) + '\"><div class="arrow"></div>' +
+                '<a href="#" >' +
+                '<span>' + xcomUnMappedAttrJson[key].label + '</span></a>' +
+                '</li>';
+            continue;
+        }
+        var asterisk = xcomUnMappedAttrJson[key].isRequired ? '<span class="required"> *</span>' : '';
+       html = html + '<li id=\"' + createXcommerceAttrElemId(key)  +  '"><div class="arrow"></div> ' +
+            '<a href="#" class="pop" onclick=\"click_pop(\''+ xcomUnMappedAttrJson[key].label +'\',\'' + createXcommerceAttrElemId(key) +'\')\">' +
+            '<span class="iconmap iconmap-add"><i class="add_tab"></i></span></a> <a href="#" class="pop"><span>' + xcomUnMappedAttrJson[key].label + asterisk  + '</span></a>'
+            '</li>';
+
+
+       /* html = html + '<li id=\"' + createXcommerceAttrElemId(key) + '\"><div class="arrow"></div>' +
+            '<a href="#" class="pop" onclick=\"click_test(\''+ xcomUnMappedAttrJson[key].label +'\',\'' + createXcommerceAttrElemId(key) +'\')\">' +
+            '<span class="iconmap iconmap-add"><i class="add_tab"></i>' + xcomUnMappedAttrJson[key].label + asterisk + '</span></a>' +
+            '</li>';*/
+    }
+
+    $j("#unmapped_xcom_attribute_tab").html(html);
+}
+;
+
+function click_pop(selectedAttr, xcomAttrId) {
+    var $tab_title_input = $j("#tab_title");
+    var $dialog = $j("#dialog").dialog({
+        autoOpen:false,
+        modal:true,
+        buttons:{
+            Cancel:function () {
+                $j(this).removeClass("ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only");
+                $j(this).dialog("close");
+            },
+            Create:function () {
+                $j(this).dialog("create");
+                // get selected value
+                var attrValueSelected = $j("#dialog_select option:selected").text();
+                if (attrValueSelected.length == 0) {
+                    // try to get value from combobox
+                    attrValueSelected = $j("#auto-input").val();
+                }
+                // check if apply all checkbox is clicked
+                applyAll = $j('#dialog_checkbox').is(':checked');
+
+                $dialog.dialog("close");
+                create_new_mapping(attrValueSelected, applyAll);
+            }
+        },
+        open:function () {
+            $tab_title_input.focus();
+        },
+        close:function () {
+
+        },
+
+        create:function () {
+
+        }
+    });
+
+   /* var selectedAttr = $j(".selected > a > span").text();
+    var xcomAttrId = parseXcommerceAttrId($j("#unmapped_xcom_attribute_tab li.selected").attr("id"));
+    */
+
+    var xcomAttr = xcomUnMappedAttrJson[ parseXcommerceAttrId(xcomAttrId)];
+
+
+       /* selectedAttr = $j("#unmapped_xcom_attribute_tab li.selected").
+            css({style:"bold"}).text().split('*')[0];*/
+
+        $dialog.dialog("option", "title", "Adding '" + selectedAttr + "' to Magento");
+
+        $j('#dialog_text2').text("Click \"Create\" to add '" + selectedAttr + "'" + " to your Magento attributes");
+        $j('#dialog_text').text("Select or enter a default value for the '" + selectedAttr + "'" + " attribute");
+
+        $j('#auto-input').empty();
+        $j('#dialog_select').empty();
+        $j('#combobox').empty();
+
+        var newOptions = xcomAttr.attrvalues;
+        var value;
+        var count = 0;
+
+        var readOnly = xcomAttr['isRestricted'];
+        var select;
+        if (readOnly == 1) {
+            select = $j("#dialog_select");
+        }
+        else {
+            select = $j("#combobox");
+            select.append($j('<option></option>').val("-1").text("No default value"));
+        }
+        for (var key in newOptions) {
+            var newOption = $j('<option></option>').val(count++).text(newOptions[key]);
+            select.append(newOption);
+        }
+
+        if (readOnly == 1) {
+            // Only show the drop down menu
+            $j('#dialog_select').show();
+            $j('#auto-input').hide();
+            $j('#auto-input').attr('readonly', true);
+            //$j('#auto-input').val("Please select a value from the list.");
+        }
+        else {
+            $j('#auto-input').show();
+            $j('#auto-input').attr('readonly', false);
+            $j('#dialog_select').hide();
+           // $j('#auto-input').val("Please select a value or enter one.");
+        }
+        $dialog.dialog("open");
+
+}
+;
+
+function fillMappedXcomTab() {
+    var html = '';
+    for (var key in  xcomMappedAttrJson) {
+        var asterisk = xcomMappedAttrJson[key].isRequired ? '<span class="required"> *</span>' : '';
+        html = html + '<li id=\"' + createXcommerceAttrElemId(key) + '\"><div class="arrow"></div>' +
+            xcomMappedAttrJson[key].label + asterisk + '</span></a>' +
+            '</li>';
+    }
+    $j("#mapped_xcom_attribute_tab").html(html);
+}
+;
+
+function fillUnmappedMagentoTab() {
+    var html = '';
+    for (var key in magentoUnmappedAttrJson) {
+        html = html +
+            '<li id=\"' + createMagentoAttrElemId(key) + '\"><div class="arrow"></div>' +
+            '<a href="#" class="mag-pop">' + magentoUnmappedAttrJson[key].label + '</a>' +
+            '</li>';
+    }
+
+    $j("#unmapped_magento_attribute_tab").html(html);
+}
+;
+
+function fillMappedMagentoTab() {
+    var html = '';
+    for (var key in magentoMappedAttrJson) {
+        var xcomName = '';
+        for (var j in xcomMappedAttrJson) {
+            if (magentoMappedAttrJson[key].label == xcomMappedAttrJson[j].magento_name) {
+                xcomName = xcomMappedAttrJson[j].label;
+                break;
+            }
+        }
+
+        html = html +
+            '<li id=\"' + createMagentoAttrElemId(key) + '\">' +
+            '<div style="white-space:nowrap;" class="arrow"></div>' +
+            '<a href="#" style="width: 340px" >' + '<span style="width:180px;float:left;margin-top:4px;">' + magentoMappedAttrJson[key].label +
+            '</span>' + '<span style="white-space:nowrap;" class=\"iconmap iconmap-arrow\"><i></i></span>' + '   ' + xcomName + '</a></li>';
+
+    }
+
+    $j("#mapped_magento_attribute_tab").html(html);
+}
+;
+
+</script>
+
+
+<?php
+$updateMappingUrl = $this->getUpdateMappingUrl();
+$saveMappingUrl = $this->getSaveMappingUrl();
+$clearMappingUrl = $this->getClearMappingUrl();
+$createNewAttrUrl = $this->createNewAttrUrl();
+?>
+
+<div>
+    <div id="tabs_magento" style="width: 25%; margin-right: 15px; float: left">
+        <ul>
+            <li><a href="#tabs_magento_unmapped" id="unmapped">Unmapped</a></li>
+            <li><a href="#tabs_magento_mapped" id="mapped">Mapped</a></li>
+            <li id="steps" class="steps">STEP 1</li>
+        </ul>
+        <div id="tabs_magento_unmapped" style="height: 308px; overflow: auto; ">
+            <ul class="set-list2" id="unmapped_magento_attribute_tab">
+                <script type="text/javascript">
+                    fillUnmappedMagentoTab();
+                </script>
+            </ul>
+        </div>
+        <div id="tabs_magento_mapped" style="height: 308px; overflow: auto;">
+            <div class="magtitle">
+                <tr><td>
+                    <li>Magento<xtitle>X.commerce</xtitle></li>
+                </td></tr>
+            </div>
+            <ul class="set-list2" id="mapped_magento_attribute_tab">
+                <script type="text/javascript">
+                    fillMappedMagentoTab();
+                </script>
+            </ul>
+        </div>
     </div>
-    <?php echo $_element->getSubFieldsetHtml() ?>
-<?php if (!$_element->getNoContainer()): ?>
+    <div id="tabs_commerce" style="width: 25%; margin-right: 15px; float: left;height:369px; ">
+        <ul>
+            <li>
+                <aa class="xtab" href="#tabs-21">X.commerce Attributes</aa>
+                <br> </br>
+            </li>
+                <li class="steps">STEP 2</li>
+        </ul>
+        <div id="tabs-21" style="height: 330px; overflow: auto; width:100%;">
+            <ul class="set-list" id="unmapped_xcom_attribute_tab" style="margin-left: 15px; ">
+                <script type="text/javascript">
+                    fillUnmappedXcomTab();
+                </script>
+            </ul>
+        </div>
+        <div id="tabs-22" style="height: 300px; overflow: auto; display:none;"
+             class="ui-tabs-panel ui-widget-content ui-corner-bottom">
+            <ul class="set-list2" id="mapped_xcom_attribute_tab" style="margin-left: 15px">
+                <script type="text/javascript">
+                    fillMappedXcomTab();
+                </script>
+            </ul>
+        </div>
     </div>
-<?php endif; ?>
-<?php if ($_element->getFieldsetContainerId()): ?>
+    <div id="tabs_values_2" style="display: none; width: 35%; margin-right: 15px; float: left;height:369px;">
+        <ul>
+            <li>
+                <aa class="saveid" href="#tabs-12" id="li_save_mapping">Attribute Value Mapping</aa>
+                <br> </br>
+            </li>
+            <li class="steps">STEP 3</li>
+        </ul>
+        <div id="tabs-12" style="display: inline-block; height: 325px; overflow: auto; ">
+            <div id="tabs-12-content">
+            </div>
+
+            <button class="scalable" type="button" id="save_mapping" onclick="">
+                <span>Save Mapping</span>
+            </button>
+            <span> <button onclick="" id="clear_mapping_partial" class="scalable" type="button">
+                <span>Clear Mapping</span>
+            </button>
+                </span>
+
+            <span id="suc_mes" style="margin-left: 20px; color: green; display: none">Mapping is Saved!</span>
+        </div>
+    </div>
+
+    <div id="tabs_values_3" style="display: none; width: 35%; margin-right: 15px; float: left;height:369px;">
+        <ul>
+            <li>
+                <aa class="saveid" href="#tabs-13" id="li_update_mapping">Attribute Value Mapping</aa>
+                <br> </br>
+            </li>
+        </ul>
+        <div id="tabs-13" style="display: inline-block; height: 325px; overflow: auto; ">
+            <div id="update_attribute_mapping_contents">
+            </div>
+
+
+                        <button class="scalable" type="button" id="update_mapping" onclick="">
+                            <span>Update Mapping</span>
+                        </button>
+
+                        <button onclick="" id="clear_mapping" class="scalable" type="button">
+                            <span>Clear Mapping</span>
+                        </button>
+
+                    <span id="update_suc_mes" style="margin-left: 20px; color: green; display: none">Mapping is updated</span>
+
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div id="select-message" style="width: 25%;float: left; position: relative;">
+        <p id="select-message-p" style="position:relative;text-align: center; margin-top: 25%;display: inline-block; padding: 15px;margin-left: -50px;line-height: 40px;
+        font-size: 43px; font-family: Myriad Pro, arial, helvetica,verdana,sans-serif; color: #EBEBEB; font-style: italic;width: 800px;">
+            Select Magento Attribute</p>
+        <i class="iconmap-help-arrow lg"></i></p>
+    </div>
+    <div id="required" style="float:  left; width:  100%">
+        <span style="color: red; size: 24px; padding-left: 28%; padding-top: 5px;"> * </span> <span
+        style="size: 12px; font-family: arial">Required Attribute</span>
+    </div>
+
+    <div id="dialog">
+        </br>
+        <span style="padding-bottom:5px" id="dialog_text2"></span>
+        <select id="dialog_select" class="dialog_select">
+        </select>
+
+        <div class="ui-widget">
+            <select id="combobox">
+                <option value="">Choose a value from list or enter one:</option>
+            </select>
+        </div>
+        <span style="margin-left:20px" id="dialog_text"></span>
+        <br/>
+        <br/>
+
+        <form>
+            <input style="float:left; width:5%; position:relative; top:2px;" type="checkbox" id="dialog_checkbox"
+                   value="dialog_checkbox"/>
+            Apply default value to all items in this attribute set
+        </form>
+        </fieldset>
+    </div>
 </div>
-<?php endif; ?>
+
+<!-- HIDDEN / POP-UP DIV -->
+<div id="pop-up">
+    <h3 id="pop-title">X.commerce Values</h3>
+    <span id="pop-text">
+
+    </span>
+</div>
+
+<div id="mag-pop-up">
+    <h3 id="mag-pop-title">Magento Values</h3>
+    <span id="mag-pop-text">
+
+    </span>
+</div>
+
+<script type="text/javascript">
+
+
+function prepareValues(magentoAttrValues) {
+
+    var values = [];
+    var j = 0;
+
+    jQuery.each(magentoAttrValues, function (i) {
+        values[j] = {};
+
+        var id = $j("#target_" + i).children(":selected").attr("id");
+
+        if (typeof id == 'undefined') {
+            id = $j("#target_" + i).attr("mapping_value_id");
+        }
+
+        if (id != 0) {
+            values[j]['target_attribute_value'] = id;
+            values[j]['attribute_value'] = i;
+            j++;
+        }
+    });
+
+    result = JSON.stringify(values);
+    return result;
+}
+
+function fillSaveMappingTab(selectedMagentoAttributeObj, selectedXcommerceAttributeObj) {
+    var select_attribute_message = "<z>Map your Magento attribute values to "
+        + "corresponding X.commerce values."
+        + " Review, edit, or clear your product values mapping</z>";
+    var ready_to_save_message =
+    '<z>Magento attribute values will be passed through “As-is”. Click the "Clear Mapping" button to remove the mapping.</z>';
+
+    var selectedMagentoAttributeId = selectedMagentoAttributeObj.value;
+    var selectedXcommerceAttributeId = selectedXcommerceAttributeObj.value;
+
+    var magento_name = selectedXcommerceAttributeObj.magento_name;
+    var magentoAttrValues = selectedMagentoAttributeObj.attrvalues;
+    var xCommerceAttrValues = selectedXcommerceAttributeObj.attrvalues;
+
+
+    var attrValueMapping = selectedMagentoAttributeObj.attrValueMapping;
+    var attrAllCheck = true;
+    if (typeof attrValueMapping == 'undefined') {
+        attrValueMapping = [];
+    }
+
+    var autoValueMappingTable = [];
+    if (xcommerceValueMappings[selectedMagentoAttributeId] &&
+        xcommerceValueMappings[selectedMagentoAttributeId][selectedXcommerceAttributeId]) {
+        autoValueMappingTable = xcommerceValueMappings[selectedMagentoAttributeId][selectedXcommerceAttributeId];
+    }
+
+
+    var html = '';
+    var valueMappingNeeded = true;
+    ;
+    if (selectedXcommerceAttributeId == '-1') {
+        // no value mapping is the attribute is custom attribute mapping
+        valueMappingNeeded = false;
+    }
+    else if (selectedMagentoAttributeObj.attrtype != 'select') {
+        valueMappingNeeded = false;
+    } else if (isEmpty(xCommerceAttrValues) || isEmpty(magentoAttrValues)) {
+        valueMappingNeeded = false;
+    }
+
+    if (!valueMappingNeeded) {
+        html += ready_to_save_message;
+
+        html += '<table style="margin-left: 18px; margin-top: 10px; width: 75%" id="save_mapping_table_show_only">';
+
+        html = '<z> Click "Save Mapping" to map the Magento attribute '
+            + 'to X.commerce attribute.'
+            + ' Values from the Magento attribute '
+            + selectedMagentoAttributeObj['label'] + ' will be passed through "As-is".';
+
+    }
+    else {
+        attrAllCheck = false;
+        html += select_attribute_message;
+        html += '<table style="margin-left: 18px; margin-top: 10px; width: 75%" id="save_mapping_table">';
+        html += '<tr><td colspan="100%"><p align="right"><a href="#" onclick="clearall_onClick(false)" style="color: red;">clear all</a></p><hr/></td></tr>';
+
+        jQuery.each(magentoAttrValues, function (i, value) {
+            var mappingValueId = attrValueMapping[i];
+
+            if (typeof mappingValueId == 'undefined') {
+                attrAllCheck = false;
+                html = html + '<tr><td><span class=\"iconmap iconmap-error\" id=' + i + '><i></i>' + magentoAttrValues[i] + '</span>'
+                    + '</td><td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>'
+                    + '<td colspan=\"2\"><select class=\"select\" style=\"width: 100%\" id=' + 'target_' + i + '>';
+                jQuery.each(xCommerceAttrValues, function (j) {
+                    if (autoValueMappingTable[i] && autoValueMappingTable[i] == j) {
+                        html = html + '<option id=' + j + ' selected=\"selected\">' + xCommerceAttrValues[j] + '</option>';
+                    }
+                    else {
+                        html = html + '<option id=' + j + '>' + xCommerceAttrValues[j] + '</option>';
+                    }
+                });
+                +'</select></td></tr>';
+            }
+            else {
+                var mappingFound = false;
+                jQuery.each(xCommerceAttrValues, function (j, mappingValueName) {
+                    if (mappingValueId == j) {
+                        mappingFound = true;
+                        html = html + '<alli><tr><td><span class=\"iconmap iconmap-success\" id=' + i + '><i></i>' + value + '</span>'
+                            + '</td><td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>'
+                            + '<td colspan=\"2\" id=' + 'target_' + i + ' mapping_value_id=' + mappingValueId + '>';
+                        html = html + mappingValueName + '</span></td>' +
+                            ' <td ><a class="clr" href="#" onClick=\"clear_onClick(' + i + ',' + 'false' + ')\" style="color: blue;">clear</a></td></alli>';
+                    }
+                });
+
+                if (!mappingFound) {
+                    attrAllCheck = false;
+                    html = html + '<tr><td><span class=\"iconmap iconmap-error\" id=' + i + '><i></i>' + magentoAttrValues[i] + '</span>'
+                        + '</td><td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>'
+                        + '<td colspan=\"2\"><select class=\"select\" style=\"width: 100%\" id=' + 'target_' + i + '>';
+                    jQuery.each(xCommerceAttrValues, function (j) {
+                        if (autoValueMappingTable[i] && autoValueMappingTable[i] == j) {
+                            html = html + '<option id=' + j + ' selected=\"selected\">' + xCommerceAttrValues[j] + '</option>';
+                        }
+                        else {
+                            html = html + '<option id=' + j + '>' + xCommerceAttrValues[j] + '</option>';
+                        }
+                    });
+                    +'</select></td></tr>';
+                }
+            }
+        });
+        html += '</table>';
+    }
+    $j('#tabs-12-content').html(html);
+    if (typeof magento_name == 'undefined') {
+        $j("#clear_mapping_partial").hide();
+
+    }
+    else {
+        $j("#clear_mapping_partial").show();
+    }
+}
+
+function isEmpty(map) {
+    for (var key in map) {
+        if (map.hasOwnProperty(key)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function fillUpdateMappingTab(selectedMagentoAttributeObj, selectedXcommerceAttributeObj) {
+
+    var magentoAttrValues = selectedMagentoAttributeObj.attrvalues;
+    var xCommerceAttrValues = selectedXcommerceAttributeObj.attrvalues;
+    var attrValueMapping = selectedMagentoAttributeObj.attrValueMapping;
+    if (typeof attrValueMapping == 'undefined') {
+        attrValueMapping = [];
+    }
+    var isSelectAttr = (selectedMagentoAttributeObj.attrtype == 'select');
+    var isCustomAttributeMapping = (selectedXcommerceAttributeObj.value == '-1');
+
+    var selectAttributeMsg = "<z>Map your Magento attribute values to corresponding X.commerce values. "
+        + "Review, edit, or clear your product values mapping.</z>";
+    var textCustomAttributeMsg =
+        '<z>Values from the Magento attribute ' + selectedMagentoAttributeObj['label'] + ' will be passed through “As-is”. Click the \"Clear Mapping\" button to remove the mapping.</z>';
+
+    var html = '';
+    var isXcomAttrRestricted = selectedXcommerceAttributeObj['isRestricted'];
+
+    if (!isSelectAttr
+        || isCustomAttributeMapping
+        || isEmpty(xCommerceAttrValues) || isEmpty(magentoAttrValues)) {
+        html += textCustomAttributeMsg;
+        $j('#update_mapping').hide();
+    }
+    else {
+        html += selectAttributeMsg;
+        html += '<table style="margin-left: 18px; margin-top: 10px; width: 75%" id="update_mapping_table">';
+        html += '<tr>';
+        html += '<td><tabatt><b>Magento</tabatt></b></td><td></td><td><tabatt><b>X.commerce</tabatt></b></td>'
+        html += '<td></td><td><a class="clr2" href="#" onclick="clearall_onClick(true)" style="color: red;">clear all</a>'
+        html +='</tr>';
+        jQuery.each(magentoAttrValues, function (i, value) {
+            var mappingValueId = attrValueMapping[i];
+            var isMapped = false;
+            jQuery.each(xCommerceAttrValues, function (j, mappingValueName) {
+                if (mappingValueId == j) {
+                    isMapped = true;
+                    html += '<tr><td><span class=\"iconmap iconmap-success\" id=' + i + '><i></i>' + value + '</span>'
+                        + '</td><td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>'
+                        + '<td colspan=\"2\" id=' + 'target_' + i + ' mapping_value_id=' + mappingValueId + '>';
+                    html = html + mappingValueName + '</span></td>' +
+                        ' <td ><a class="clr" href="#" onClick=\"clear_onClick(' + i + ',' + 'true' + ')\" style="color: blue;">clear</a></td>';
+                    html += '</tr>'
+                }
+            });
+            // this should only happen when a magento select attr is mapped to X.com string attr
+            // mark the attribute as "As-is"
+            if (!isMapped) {
+                html += '<tr><td><span class=\"iconmap iconmap-success\" id=' + i + '><i></i>' + value + '</span>'
+                    + '</td><td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>'
+                    + '<td colspan=\"2\" id=' + 'target_' + i + ' mapping_value_id=0' + '>';
+                html += "As-is" + '</td>' +
+                    ' <td ><a class="clr" href="#" onClick=\"clear_onClick(' + i + ',' + 'true' + ')\" style="color: red;">clear</a></td>';
+                html += '</tr>'
+            }
+            //$j('#update_attribute_mapping_contents').html(html);
+        });
+        html += '</table>';
+        $j('#update_mapping').show();
+    }
+    $j('#update_attribute_mapping_contents').html(html);
+}
+
+
+function clear_onClick(magValueId, mappedTab) {
+
+    var selectedXcommerceAttributeId;
+    var selectedMagentoAttributeId;
+    var magentoAttrValues;
+    var xCommerceAttrValues;
+    var magentoAttrObj;
+    var xCommerceAttrObj;
+
+    if (mappedTab) {
+        selectedXcommerceAttributeId = parseXcommerceAttrId($j("#mapped_xcom_attribute_tab li.selected").attr("id"));
+        selectedMagentoAttributeId = parseMagentoAttrId($j("#mapped_magento_attribute_tab li.selected").attr("id"));
+        magentoAttrObj = magentoMappedAttrJson[selectedMagentoAttributeId];
+        magentoAttrValues = magentoAttrObj['attrvalues'];
+        xCommerceAttrObj = xcomMappedAttrJson[selectedXcommerceAttributeId];
+        xCommerceAttrValues = xCommerceAttrObj['attrvalues'];
+    }
+    else {
+        selectedXcommerceAttributeId = parseXcommerceAttrId($j("#unmapped_xcom_attribute_tab li.selected").attr("id"));
+        selectedMagentoAttributeId = parseMagentoAttrId($j("#unmapped_magento_attribute_tab li.selected").attr("id"));
+        magentoAttrObj = magentoUnmappedAttrJson[selectedMagentoAttributeId];
+        magentoAttrValues = magentoAttrObj['attrvalues'];
+        xCommerceAttrObj = xcomUnMappedAttrJson[selectedXcommerceAttributeId];
+        xCommerceAttrValues = xCommerceAttrObj['attrvalues'];
+    }
+    var noSelectionText = '--choose one --';
+    if (magentoAttrObj.attrtype == 'select' && xCommerceAttrObj['isRestricted'] != 1) {
+        noSelectionText = '--As-is --';
+    }
+    var html = '';
+    jQuery.each(magentoAttrValues, function (i, value) {
+
+        if (i == magValueId) {
+
+            html = html + '<td><span class=\"iconmap iconmap-error\" id=' + i + '><i></i>' + magentoAttrValues[i] + '</span>'
+                + '</td><td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>'
+                + '<td colspan=\"2\"><select class=\"select\" style=\"width: 100%\" id=' + 'target_' + i + '>';
+            html = html + '<option id=' + 0 + '>' + noSelectionText + '</option>';
+            jQuery.each(xCommerceAttrValues, function (j) {
+                html = html + '<option id=' + j + '>' + xCommerceAttrValues[j] + '</option>';
+            });
+            html = html + '</select></td>';
+
+            return false;
+        }
+    });
+
+    if (mappedTab) {
+        $j("#update_mapping_table tbody tr #target_" + magValueId).parent().html(html);
+    }
+    else {
+        $j("#save_mapping_table tbody tr #target_" + magValueId).parent().html(html);
+    }
+}
+
+function clearall_onClick(mappedTab) {
+
+
+    var selectedXcommerceAttributeId;
+    var selectedMagentoAttributeId;
+    var magentoAttrValues;
+    var xCommerceAttrValues;
+    var magentoAttrObj;
+    var xCommerceAttrObj;
+
+    if (mappedTab) {
+        selectedXcommerceAttributeId = parseXcommerceAttrId($j("#mapped_xcom_attribute_tab li.selected").attr("id"));
+        selectedMagentoAttributeId = parseMagentoAttrId($j("#mapped_magento_attribute_tab li.selected").attr("id"));
+        magentoAttrObj = magentoMappedAttrJson[selectedMagentoAttributeId];
+        magentoAttrValues = magentoAttrObj['attrvalues'];
+        xCommerceAttrObj = xcomMappedAttrJson[selectedXcommerceAttributeId];
+        xCommerceAttrValues = xCommerceAttrObj['attrvalues'];
+    }
+    else {
+        selectedXcommerceAttributeId = parseXcommerceAttrId($j("#unmapped_xcom_attribute_tab li.selected").attr("id"));
+        selectedMagentoAttributeId = parseMagentoAttrId($j("#unmapped_magento_attribute_tab li.selected").attr("id"));
+        magentoAttrObj = magentoUnmappedAttrJson[selectedMagentoAttributeId];
+        magentoAttrValues = magentoAttrObj['attrvalues'];
+        xCommerceAttrObj = xcomUnMappedAttrJson[selectedXcommerceAttributeId];
+        xCommerceAttrValues = xCommerceAttrObj['attrvalues'];
+    }
+
+    var noSelectionText = '--choose one --';
+    if (magentoAttrObj.attrtype == 'select' && xCommerceAttrObj['isRestricted'] != 1) {
+        noSelectionText = '--As-is --';
+    }
+
+    jQuery.each(magentoAttrValues, function (i, value) {
+        var html = '';
+        var element = null;
+        if (mappedTab) {
+            element = $j("#update_mapping_table tbody tr #target_" + i);
+        }
+        else {
+            element = $j("#save_mapping_table tbody tr #target_" + i);
+        }
+
+        html = html + '<td><span class=\"iconmap iconmap-error\" id=' + i + '><i></i>' + magentoAttrValues[i] + '</span>'
+            + '</td><td><span class=\"iconmap iconmap-arrow\"><i></i></span></td>'
+            + '<td colspan=\"2\"><select class=\"select\" style=\"width: 100%\" id=' + 'target_' + i + '>';
+        html = html + '<option id=' + 0 + '>' + noSelectionText + '</option>';
+        jQuery.each(xCommerceAttrValues, function (j) {
+            html = html + '<option id=' + j + '>' + xCommerceAttrValues[j] + '</option>';
+        });
+        html = html + '</select></td>';
+
+        var parent = element.parentsUntil($j("tbody"), "tr");
+        parent.html(html);
+
+    });
+}
+
+</script>
+<script type="text/javascript">
+$j("ul.set-list2").on("click", "li > a", function () {
+    $j(this).parents("ul").find("li").removeClass("selected");
+    $j(this).parent().addClass("selected");
+    return false;
+});
+$j("ul.set-list").on("click", "li > a", function () {
+    $j(this).parents("ul").find("li").removeClass("selected");
+    $j(this).parent().addClass("selected");
+    return false;
+});
+$j("#mapped").click(function () {
+    $j("#tabs_magento").css("width","35%");
+    $j("#steps").hide();
+    $j("#tabs_commerce").hide();
+    $j("#required").hide();
+    $j("#tabs_values_2").hide();
+    $j("#save_mapping_table").html("");
+    $j("#tabs_values_3").hide();
+    $j("#tabs-22").show();
+    $j("#tabs-21").hide();
+
+    $j("#select-message").css("display", "inline-block");
+    textX = 'Select Magento Attribute';
+    $j("#select-message-p").text(textX);
+});
+
+$j("#unmapped").click(function () {
+    $j("#tabs_magento").css("width","25%");
+    $j("#steps").show();
+    $j("#tabs_values_2").hide();
+    $j("#tabs_values_3").hide();
+    $j("#tabs_commerce").show().css("opacity","");
+    $j("#required").show();
+    $j("#tabs-21").show();
+    $j("#tabs-22").hide();
+    $j("#update_mapping_table").html("");
+
+    $j("#select-message").css("display", "inline-block");
+    textX = 'Select Magento Attribute';
+    $j("#select-message-p").text(textX);
+    $j("#suc_mes").hide();
+});
+
+$j("#save_mapping").click(function () {
+    $j("#magento_attribute_tab_1").remove();
+    $j("#suc_mes").show();
+
+    var selectedMagentoAttributeId = parseMagentoAttrId($j("#unmapped_magento_attribute_tab li.selected").attr("id"));
+    var selectedXcommerceAttributeId = parseXcommerceAttrId($j("#unmapped_xcom_attribute_tab li.selected").attr("id"))
+    var selectedMagentoAttribute = magentoUnmappedAttrJson[selectedMagentoAttributeId];
+    var selectedXcommerceAttribute = xcomUnMappedAttrJson[selectedXcommerceAttributeId];
+
+    var msg = null;
+
+    $j.ajax({
+        type:'GET',
+        url:"<?php echo $saveMappingUrl; ?>",
+        cache:false,
+        async:false,
+        data:{attributeId:selectedMagentoAttributeId, attributeMappingId:selectedXcommerceAttributeId,
+            values:prepareValues(selectedMagentoAttribute['attrvalues'])},
+        success:function (html_input) {
+            var attributes = JSON.parse(html_input);
+            if (timeoutHandler(attributes))
+                return false;
+
+            if (attributes[3][selectedMagentoAttributeId] == null) {
+                msg = "The Magento "
+                    + selectedMagentoAttribute['label']
+                    + " attribute was mapped to the X.commerce Size attribute and the "
+                    + selectedXcommerceAttribute['label']
+                    + " attribute was moved to the Mapped tab.";
+            }
+            else {
+                msg = "Magento attribute "
+                    + selectedMagentoAttribute['label']
+                    + " has been mapped to X.commerce attribute "
+                    + selectedXcommerceAttribute['label']
+                    + "."
+            }
+            fillTabs(attributes, msg);
+            $j("#tabs_values_2").hide();
+        }
+    });
+});
+
+$j("#unmapped_magento_attribute_tab").on("click", "li > a", function () {
+
+    $j("#select-message-p").css("margin-left","-30px");
+    $j("#tabs_values_2").hide();
+    $j("#suc_mes").hide();
+    var selectedMagentoAttributeId = parseMagentoAttrId($j("#unmapped_magento_attribute_tab li.selected").attr("id"));
+    var selectedMagentoAttribute = magentoUnmappedAttrJson[selectedMagentoAttributeId];
+    var valueMapping = selectedMagentoAttribute.attrValueMapping;
+    if (typeof valueMapping == 'undefined') {
+
+        var html = fillUnmappedXcomTab(xcomUnMappedAttrJson);
+        $j("#unmapped_xcom_attribute_tab").html(html);
+        $j("#select-message").css("display", "inline-block");
+        textX = 'Select X.commerce Attribute';
+        $j("#select-message-p").text(textX);
+        $j("#select-message").css("display", "inline-block");
+    }
+    else {
+        // selected partially mapped
+        var label = selectedMagentoAttribute.label;
+        var selectedXcommerceAttribute = null;
+        var html = fillUnmappedXcomTab(xcomUnMappedAttrJson, true);
+        $j("#unmapped_xcom_attribute_tab").html(html);
+
+        $j("#unmapped_xcom_attribute_tab li").each(function (index, element) {
+            var id = parseXcommerceAttrId(element.id);
+            var xcom_attr = xcomUnMappedAttrJson[id];
+            var name = xcom_attr.magento_name;
+
+            if (name == label) {
+                this.className = "selected";
+                selectedXcommerceAttribute = xcom_attr;
+                return true;
+            }
+            else {
+                this.className = "";
+            }
+        })
+
+        fillSaveMappingTab(selectedMagentoAttribute, selectedXcommerceAttribute);
+        $j("#select-message").css("display", "none");
+        $j("#tabs_values_2").show();
+    }
+})
+
+$j("#unmapped_xcom_attribute_tab").on("click", "li > a", function () {
+    $j("#select-message").css("display", "none");
+    $j("#tabs_commerce").show().css("opacity","");
+
+    var selectedMagentoAttrElemId = $j("#unmapped_magento_attribute_tab li.selected").attr("id");
+    if (typeof selectedMagentoAttrElemId == 'undefined') {
+        return false;
+    }
+    var selectedMagentoAttributeId = parseMagentoAttrId(selectedMagentoAttrElemId);
+    var selectedMagentoAttribute = magentoUnmappedAttrJson[selectedMagentoAttributeId];
+
+
+    var selectedXcommerceAttributeId = parseXcommerceAttrId($j("#unmapped_xcom_attribute_tab li.selected").attr("id"));
+    var selectedXcommerceAttribute = xcomUnMappedAttrJson[selectedXcommerceAttributeId];
+
+    var magento_name = selectedXcommerceAttribute.magento_name;
+
+    if (typeof magento_name == 'undefined') {
+
+        $j("#tabs_values_2").css("display", "inline-block");
+        fillSaveMappingTab(selectedMagentoAttribute, selectedXcommerceAttribute);
+    }
+    else {
+        var xcomLabel = selectedXcommerceAttribute.label;
+        if (magento_name != selectedMagentoAttribute.label) {
+            alert('"' + xcomLabel + '"' + ' is already mapped to "' + magento_name + '".' + " please clear the mapping first");
+            $j("#tabs_values_2").hide();
+            $j(this).parents("ul").find("li").removeClass("selected");
+            return false;
+        }
+        fillSaveMappingTab(selectedMagentoAttribute, selectedXcommerceAttribute);
+    }
+})
+
+$j("#mapped_magento_attribute_tab").on("click", "li > a", function () {
+    $j("#update_suc_mes").hide();
+    $j("#required").hide();
+    $j("#tabs_commerce").hide();
+    $j("#tabs_values_2").hide();
+    $j("#select-message").css("display", "none");
+
+    $j("#tabs_values_3").css("display", "inline-block");
+
+    var selectedMagentoAttributeId = parseMagentoAttrId($j("#mapped_magento_attribute_tab li.selected").attr("id"));
+    var selectedMagentoAttribute = magentoMappedAttrJson[selectedMagentoAttributeId]
+    var label = selectedMagentoAttribute.label;
+
+    var selectedXcommerceAttribute = null;
+    $j("#mapped_xcom_attribute_tab li").each(function (index, element) {
+        var id = parseXcommerceAttrId(element.id);
+        var xcom_attr = xcomMappedAttrJson[id];
+        var name = xcom_attr.magento_name;
+        if (name == label) {
+            selectedXcommerceAttribute = xcom_attr;
+            this.className = "selected";
+            return true;
+        }
+        else {
+            this.className = "";
+        }
+    })
+
+    fillUpdateMappingTab(selectedMagentoAttribute, selectedXcommerceAttribute);
+})
+
+$j("#update_mapping").click(function () {
+
+        var selectedMagentoAttributeId = parseMagentoAttrId($j("#mapped_magento_attribute_tab li.selected").attr("id"));
+        var selectedXcommerceAttributeId = parseXcommerceAttrId($j("#mapped_xcom_attribute_tab li.selected").attr("id"));
+        var selectedMagentoAttribute = magentoMappedAttrJson[selectedMagentoAttributeId];
+        var selectedXcommerceAttribute = xcomMappedAttrJson[selectedXcommerceAttributeId];
+
+        $j.ajax({
+            type:'GET',
+            url:"<?php echo $updateMappingUrl; ?>",
+            cache:false,
+            async:false,
+            data:{attributeId:selectedMagentoAttributeId, mappingAttributeId:selectedXcommerceAttributeId,
+                relationAttributeId:selectedXcommerceAttribute.relation_attribute_id,
+                values:prepareValues(selectedMagentoAttribute['attrvalues'])},
+            success:function (html) {
+                var attributes = JSON.parse(html);
+                if (timeoutHandler(attributes))
+                    return false;
+                var msg;
+                if (attributes[2][selectedMagentoAttributeId] == null) {
+                    msg = "Mapping updated. "
+                        + "Attribute "
+                        + selectedMagentoAttribute['label']
+                        + " moved to the Unmapped tab";
+                }
+                else {
+                    msg = null;
+                }
+                fillTabs(attributes, msg);
+            }
+        });
+        $j("#tabs_commerce").hide();
+        $j("#tabs_values_3").hide();
+    }
+);
+
+$j("#clear_mapping").click(function () {
+        var selectedMagentoAttributeId = parseMagentoAttrId($j("#mapped_magento_attribute_tab li.selected").attr("id"));
+        var selectedMagentoAttribute = magentoMappedAttrJson[selectedMagentoAttributeId];
+        var r = confirm("Click 'OK' to remove all the attribute and value mappings for " + selectedMagentoAttribute['label']);
+        if (r == true) {
+
+            var selectedMagentoAttributeId = parseMagentoAttrId($j("#mapped_magento_attribute_tab li.selected").attr("id"));
+            var selectedMagentoAttribute = magentoMappedAttrJson[selectedMagentoAttributeId];
+            var selectedXcommerceAttributeId = parseXcommerceAttrId($j("#mapped_xcom_attribute_tab li.selected").attr("id"));
+            var selectedXcommerceAttribute = xcomMappedAttrJson[selectedXcommerceAttributeId];
+
+            $j.ajax({
+                type:'GET',
+                url:"<?php echo $clearMappingUrl; ?>",
+                cache:false,
+                async:false,
+                data:{attributeId:selectedMagentoAttributeId, attributeMappingId:selectedXcommerceAttributeId,
+                    relationAttributeId:selectedXcommerceAttribute.relation_attribute_id},
+                success:function (html) {
+                    var attributes = JSON.parse(html);
+                    if (timeoutHandler(attributes))
+                        return false;
+
+                    var msg = "The mapping for the Magento "
+                        + selectedMagentoAttribute['label']
+                        + " attribute was removed and the "
+                        + selectedMagentoAttribute['label']
+                        + " attribute was moved to the Unmapped tab."
+                    fillTabs(attributes, msg);
+                }
+            });
+            $j("#tabs_commerce").hide();
+            $j("#tabs_values_3").hide();
+        }
+        ;
+    }
+)
+
+
+$j("#clear_mapping_partial").click(function () {
+        var r = confirm("By clicking on OK, all mapping of attribute and values will be deleted.")
+        if (r == true) {
+            var selectedMagentoAttributeId = parseMagentoAttrId($j("#unmapped_magento_attribute_tab li.selected").attr("id"));
+            var selectedMagentoAttribute = magentoUnmappedAttrJson[selectedMagentoAttributeId];
+            var selectedXcommerceAttributeId = parseXcommerceAttrId($j("#unmapped_xcom_attribute_tab li.selected").attr("id"));
+            var selectedXcommerceAttribute = xcomUnMappedAttrJson[selectedXcommerceAttributeId];
+
+            $j.ajax({
+                type:'GET',
+                url:"<?php echo $clearMappingUrl; ?>",
+                cache:false,
+                async:false,
+                data:{attributeId:selectedMagentoAttributeId, attributeMappingId:selectedXcommerceAttributeId,
+                    relationAttributeId:selectedXcommerceAttribute.relation_attribute_id},
+                success:function (html) {
+                    var attributes = JSON.parse(html);
+                    if (timeoutHandler(attributes))
+                        return false;
+                    var msg = "Mapping cleared.";
+                    fillTabs(attributes, msg);
+                }
+            });
+            $j("#tabs_values_2").hide();
+        }
+        ;
+    }
+)
+
+
+function create_new_mapping(selectedValue, applyAll) {
+    var selectedXcommerceAttributeId = parseXcommerceAttrId($j("#unmapped_xcom_attribute_tab li.selected").attr("id"));
+    var selectedXcommerceAttribute = xcomUnMappedAttrJson[selectedXcommerceAttributeId];
+    var selectedName = $j(".selected > a > span").text();
+    $j.ajax({
+        type:"GET",
+        url:"<?php echo $createNewAttrUrl; ?>",
+        data:{attributeId:selectedXcommerceAttributeId, attributeName:selectedName,
+            attributeValue:selectedValue, applyAll:applyAll },
+        success:function (html) {
+            var attributes = JSON.parse(html);
+            if (timeoutHandler(attributes))
+                return false;
+            var mappedXcomAttr = attributes[0][selectedXcommerceAttributeId];
+            var magentoName = mappedXcomAttr['magento_name'];
+            var msg = " Created attribute, completed attribute mapping and moved "
+                + magentoName + " to Mapped tab."
+            fillTabs(attributes, msg);
+        }
+    })
+}
+
+</script>

@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Product_Get_Success extends Xcom_Xfabric_Mode
         $this->_topic = 'com.x.pim.v1/ProductLookup/LookupProductSucceeded';
         $this->_schemaRecordName = 'LookupProductSucceeded';
         $this->_schemaFile = 'Xcom_Chronicle/OrderManagement.avpr';
-        $this->_schemaVersion  = "1.0.0";
+        $this->_schemaVersion = '1.1.4';
     }
 
     /**

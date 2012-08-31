@@ -1,4 +1,4 @@
-X.commerce Integration Pack for Magento (Alpha)
+X.commerce Integration Pack for Magento (1.0.2.1)
 ===============================================
 ---
 

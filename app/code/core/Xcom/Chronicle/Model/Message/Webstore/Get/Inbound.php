@@ -33,7 +33,7 @@ class Xcom_Chronicle_Model_Message_Webstore_Get_Inbound extends Xcom_Xfabric_Mod
     {
         $this->_topic               = 'com.x.webstore.v1/WebStoreMetadataProvision/GetAllWebStore';
         $this->_schemaRecordName    = 'GetAllWebStore';
-        $this->_schemaVersion       = "1.0.0";
+        $this->_schemaVersion       = "1.0.5";
 
         parent::_construct();
     }

@@ -33,7 +33,7 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
     {
         $this->_topic               = 'com.x.pim.v1/ProductSearch/SearchProduct';
         $this->_schemaRecordName    = 'SearchProduct';
-        $this->_schemaVersion       = "1.0.0";
+        $this->_schemaVersion = '1.1.0';
 
         parent::_construct();
     }
@@ -117,8 +117,9 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
             if (isset($query['predicates'])){
                 Mage::throwException('Unsupported query parameter: predicates');
             }
-            if (isset($query['ordering'])) {
-                Mage::throwException('Unsupported query parameter: ordering');
+            if (isset($query['ordering']) && !empty($query['ordering'])) {
+                // Between version 1.1.0 and 1.1.4 this became a required field.  We still ignore it.
+                Mage::throwException('Unsupported query parameter: ordering.');
             }
 
             $count = $products->getSize();
@@ -130,7 +131,7 @@ class Xcom_Chronicle_Model_Message_Product_Search_Inbound extends Xcom_Xfabric_M
                 'numberItemsFound' => null,
                 'fields' => null,
                 'predicates' => null,
-                'ordering' => null,
+                'ordering' => array(),
                 'numberItems' => null,
                 'startItemIndex' => null,
             );

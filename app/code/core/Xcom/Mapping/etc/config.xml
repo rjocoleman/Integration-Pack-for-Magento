@@ -28,7 +28,7 @@
 <config>
     <modules>
         <Xcom_Mapping>
-            <version>0.1.0</version>
+            <version>0.1.1</version>
         </Xcom_Mapping>
     </modules>
     <global>
@@ -84,6 +84,9 @@
                     <attribute_channel>
                         <table>xcom_mapping_attribute_channel</table>
                     </attribute_channel>
+                    <channel>
+                        <table>xcom_mapping_channel</table>
+                    </channel>
                 </entities>
             </xcom_mapping_resource>
         </models>
@@ -132,6 +135,17 @@
     </admin>
     <default>
         <xcom>
+            <initializer>
+                <productTaxonomy_get>
+                    <name>productTaxonomy/get</name>
+                    <message>xcom_mapping/message_productTaxonomy_get_outbound</message>
+                </productTaxonomy_get>
+                <productTaxonomy_productType_get>
+                    <name>productTaxonomy/productType/get</name>
+                    <message>xcom_mapping/message_productTaxonomy_productType_get_outbound</message>
+                </productTaxonomy_productType_get>
+            </initializer>
+
             <topics>
                 <productTaxonomy>
                     <updated>

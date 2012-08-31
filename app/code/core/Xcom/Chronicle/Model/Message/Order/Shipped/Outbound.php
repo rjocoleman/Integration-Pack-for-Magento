@@ -32,7 +32,7 @@ class Xcom_Chronicle_Model_Message_Order_Shipped_Outbound extends Xcom_Xfabric_M
         $this->_topic = 'com.x.ordermanagement.v2/ProcessSalesChannelOrder/OrderShipped';
         $this->_schemaRecordName = 'OrderShipped';
         $this->_schemaFile = 'Xcom_Chronicle/com.x.ordermanagement.v2.avpr';
-        $this->_schemaVersion  = "2.2.8";
+        $this->_schemaVersion  = "2.2.13";
     }
 
     /**

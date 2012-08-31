@@ -27,7 +27,27 @@
 -->
 
 <layout>
+    <default>
+    </default>
     <adminhtml_map_attribute_index>
+        <reference name="head">
+            <action method="addCss"><name>xcom/jquery.ui.core.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.theme.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.tabs.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.button.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.autocomplete.css</name></action>
+            <action method="addCss"><name>xcom/mapping.css</name></action>
+            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/default.css</name></action>
+            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/magento.css</name></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery-1.7.2.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.position.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.core.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.widget.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.tabs.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.button.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.dialog.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.autocomplete.js</file></action>
+        </reference>
         <reference name="content">
             <block type="xcom_mapping/adminhtml_attribute_set" name="map_attribute_set" template="xcom/mapping/attribute/set.phtml">
                 <block type="xcom_mapping/adminhtml_attribute_set_grid" name="attribute_set_grid" as="grid"/>
@@ -38,57 +58,57 @@
     <adminhtml_map_attribute_editset>
         <reference name="head">
             <action method="setCanLoadExtJs"><flag>1</flag></action>
+            <action method="addCss"><name>xcom/jquery.ui.core.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.theme.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.tabs.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.button.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.autocomplete.css</name></action>
+            <action method="addCss"><name>xcom/mapping.css</name></action>
+            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/default.css</name></action>
+            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/magento.css</name></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery-1.7.2.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.position.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.core.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.widget.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.tabs.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.button.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.dialog.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.autocomplete.js</file></action>
         </reference>
         <reference name="content">
             <block type="xcom_mapping/adminhtml_attribute_set_edit" name="map_attribute_set_edit" template="xcom/mapping/attribute/set/edit.phtml">
                 <block type="xcom_mapping/adminhtml_attribute_set_edit_form" name="map_attribute_set_edit_form" as="form">
                     <block type="xcom_mapping/adminhtml_attribute_set_edit_tree" name="target_attribute_set_tree" />
-            </block>
+                </block>
             </block>
         </reference>
     </adminhtml_map_attribute_editset>
 
-    <adminhtml_map_attribute_name>
-        <reference name="content">
-            <block type="xcom_mapping/adminhtml_attribute_name" name="map_attribute_name" template="xcom/mapping/attribute/name.phtml">
-                <block type="xcom_mapping/adminhtml_attribute_name_grid" name="attribute_name_grid" as="grid"/>
-            </block>
-        </reference>
-    </adminhtml_map_attribute_name>
-
-    <adminhtml_map_attribute_editname>
-        <reference name="left">
-            <block type="xcom_mapping/adminhtml_attribute_tabs" name="map_attribute_tabs" as="tabs" />
-        </reference>
-        <reference name="content">
-            <block type="xcom_mapping/adminhtml_attribute_name_edit" name="map_attribute_name_edit" template="xcom/mapping/attribute/name/edit.phtml">
-                <block type="xcom_mapping/adminhtml_attribute_name_edit_form" name="map_attribute_name_edit_form" as="form"/>
-            </block>
-        </reference>
-    </adminhtml_map_attribute_editname>
-
-    <adminhtml_map_attribute_value>
-        <reference name="content">
-            <block type="xcom_mapping/adminhtml_attribute_value" name="map_attribute_value" template="xcom/mapping/attribute/value.phtml">
-                <block type="xcom_mapping/adminhtml_attribute_value_form" name="attribute_value_form" as="form"/>
-            </block>
-        </reference>
-    </adminhtml_map_attribute_value>
-
-    <adminhtml_map_attribute_valuecustom>
-        <reference name="content">
-            <block type="xcom_mapping/adminhtml_attribute_value_custom" name="map_attribute_value_custom" template="xcom/mapping/attribute/value/custom.phtml">
-                <block type="xcom_mapping/adminhtml_attribute_value_custom_grid" name="attribute_value_custom_grid" as="grid"/>
-            </block>
-        </reference>
-    </adminhtml_map_attribute_valuecustom>
 
     <adminhtml_mapping_attribute_index>
+        <reference name="head">
+            <action method="addCss"><name>xcom/jquery.ui.core.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.theme.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.tabs.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.button.css</name></action>
+            <action method="addCss"><name>xcom/jquery.ui.autocomplete.css</name></action>
+            <action method="addCss"><name>xcom/mapping.css</name></action>
+            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/default.css</name></action>
+            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/magento.css</name></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery-1.7.2.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.position.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.core.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.widget.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.tabs.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.button.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.dialog.js</file></action>
+            <action method="addJs"><file>xcom/adminhtml/jquery.ui.autocomplete.js</file></action>
+        </reference>
         <reference name="content">
-                <block type="xcom_mapping/adminhtml_attribute" name="attribute" template="xcom/mapping/attribute/name.phtml">
-                    <block type="xcom_mapping/adminhtml_attribute_edit_form" name="attribute_form"  as="form"/>
-                </block>
-                <block type="xcom_mapping/adminhtml_attribute_grid" name="grid" />
+            <block type="xcom_mapping/adminhtml_attribute" name="attribute" template="xcom/mapping/attribute/name.phtml">
+                <block type="xcom_mapping/adminhtml_attribute" name="script" template="xcom/mapping/attribute/js.phtml"/>
+                <block type="xcom_mapping/adminhtml_attribute_edit_form" name="attribute_form"  as="form"/>
+            </block>
         </reference>
     </adminhtml_mapping_attribute_index>
 

@@ -63,6 +63,25 @@ class Xcom_Mapping_Model_Attribute_Value extends Mage_Core_Model_Abstract
     }
 
     /**
+     * Get mapping array for values, when we use text attribute type
+     *
+     * @param int $attributeSetId
+     * @param int $attributeId
+     * @param int $valueId
+     * @param string|null $localeCode
+     * @return array
+     */
+    public function getTextValuesMapping($attributeSetId ,$attributeId, $valueId, $localeCode = null)
+    {
+        return $this->getCollection()
+            ->setLocaleCode($localeCode)
+            ->initValueRelations($attributeSetId, $attributeId)
+            ->addFieldToFilter('mar.attribute_id', $attributeId)
+            ->addFieldToFilter('mer.hash_value', $valueId)
+            ->getCollectionData();
+    }
+
+    /**
      * Delete records by given primary keys.
      *
      * @param array $ids

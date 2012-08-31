@@ -33,7 +33,7 @@ class Xcom_Mapping_Block_Adminhtml_Attribute extends Mage_Adminhtml_Block_Widget
     protected function _construct()
     {
         parent::_construct();
-        $this->_headerText = $this->__('Magento <--> X.commerce');
+        $this->_headerText = $this->__('Attribute & Value Mapping');
         $this->_controller = 'adminhtml_attribute';
         $this->_blockGroup = 'xcom_mapping';
     }
